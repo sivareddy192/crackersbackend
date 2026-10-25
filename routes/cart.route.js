@@ -1,0 +1,13 @@
+import { Router } from "express";
+import auth from "../middleware/auth.js";
+import { addToCartItemController, deleteCartItemQtyController, getCartItemController, updateCartItemQtyController } from "../controllers/cart.controller.js";
+import { reorderController } from "../controllers/order.controller.js";
+
+const cartRouter = Router()
+
+cartRouter.post('/create',auth,addToCartItemController)
+cartRouter.get("/get",auth,getCartItemController)
+cartRouter.put('/update-qty',auth,updateCartItemQtyController)
+cartRouter.delete('/delete-cart-item',auth,deleteCartItemQtyController)
+cartRouter.post("/reorder", auth, reorderController);
+export default cartRouter;
