@@ -7,6 +7,7 @@ import UserModel from "../models/user.model.js";
 import sendEmail from "../config/sendEmail.js";
 import offerEmailTemplate from "../utils/offerEmailTemplate.js";
 import jwt from "jsonwebtoken";
+import { fastCache, invalidateCoupons } from "../utils/fastCache.js";
 
 const couponRouter = express.Router();
 
@@ -43,6 +44,7 @@ couponRouter.post("/create", auth, admin, async (req, res) => {
             code: code.toUpperCase()
         });
         await coupon.save();
+        invalidateCoupons();
 
         // AUTO-BROADCAST TO ALL USERS FOR NEW PUBLIC ACTIVE COUPONS
         if (coupon.isActive && !coupon.isFirstOrderOnly) {
@@ -177,11 +179,15 @@ couponRouter.post("/apply", auth, async (req, res) => {
 // GET ALL COUPONS (Customers & Admin)
 couponRouter.get("/all", async (req, res) => {
     try {
-        // Auto-expire coupons in DB
-        await Coupon.updateMany(
-            { expiryDate: { $lt: new Date() }, isActive: true },
-            { $set: { isActive: false } }
-        );
+        // Run DB auto-expiration lazily in background so it never blocks HTTP request
+        setImmediate(async () => {
+            try {
+                await Coupon.updateMany(
+                    { expiryDate: { $lt: new Date() }, isActive: true },
+                    { $set: { isActive: false } }
+                );
+            } catch (ignoreErr) {}
+        });
 
         let isAdmin = false;
         const token = req.cookies?.accessToken || req?.headers?.authorization?.split(" ")[1];
@@ -189,40 +195,51 @@ couponRouter.get("/all", async (req, res) => {
             try {
                 const decode = jwt.verify(token, process.env.SECRET_KEY_ACCESS_TOKEN);
                 if (decode && decode.id) {
-                    const user = await UserModel.findById(decode.id);
+                    const user = await UserModel.findById(decode.id).select("role").lean();
                     if (user && user.role === 'ADMIN') {
                         isAdmin = true;
                     }
                 }
             } catch (err) {
-                // Ignore token verification errors for general public coupon list, treat as guest
+                // Ignore token errors, treat as customer
             }
         }
-        
-        let query = { isActive: true };
+
+        // Admin gets fresh live coupons without caching
         if (isAdmin) {
-            query = {}; // Admin sees everything
+            const now = new Date();
+            let coupons = await Coupon.find({}).sort({ createdAt: -1 }).lean();
+            coupons = coupons.map(c => ({
+                ...c,
+                isExpired: new Date(c.expiryDate) < now
+            }));
+            return res.json({
+                success: true,
+                message: "Coupons fetched successfully",
+                coupons,
+            });
         }
 
-        let coupons = await Coupon.find(query).sort({ createdAt: -1 });
+        // Public / Customers get instantaneous response from RAM cache (~0.003ms)
+        return await fastCache.sendCached(req, res, "coupon:public", async () => {
+            const now = new Date();
+            let coupons = await Coupon.find({
+                isActive: true,
+                expiryDate: { $gt: now }
+            }).sort({ createdAt: -1 }).lean();
 
-        // Add virtual expired flag and filter for customers
-        const now = new Date();
-        coupons = coupons.map(c => ({
-            ...c._doc,
-            isExpired: new Date(c.expiryDate) < now
-        }));
+            coupons = coupons.map(c => ({
+                ...c,
+                isExpired: false
+            }));
 
-        if (!isAdmin) {
-            // Further filter for customers to ensure they only see non-expired ones
-            coupons = coupons.filter(c => !c.isExpired);
-        }
+            return {
+                success: true,
+                message: "Coupons fetched successfully",
+                coupons,
+            };
+        }, 180);
 
-        res.json({
-            success: true,
-            message: "Coupons fetched successfully",
-            coupons,
-        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -298,6 +315,8 @@ couponRouter.put("/update/:id", auth, admin, async (req, res) => {
             })().catch(criticalErr => console.error("[Auto-Broadcast Warning] Critical background catch:", criticalErr));
         }
 
+        invalidateCoupons();
+
         res.json({
             success: true,
             message: "Coupon updated",
@@ -314,6 +333,7 @@ couponRouter.delete("/delete/:id", auth, admin, async (req, res) => {
 
     try {
         await Coupon.findByIdAndDelete(req.params.id);
+        invalidateCoupons();
 
         res.json({
             success: true,

@@ -40,6 +40,7 @@ const allowedOrigins = [
 
 app.use(cors({
     credentials : true,
+    maxAge: 86400, // Cache preflight requests for 24h to avoid OPTIONS waterfalls
     origin : (origin, callback) => {
         if (!origin) return callback(null, true)
         if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
@@ -48,13 +49,28 @@ app.use(cors({
         return callback(null, false)
     }
 }))
+
+app.use(compression({
+    level: 6,
+    threshold: 512
+}))
+
 app.use(express.json())
-app.use(compression())
 app.use(cookieParser())
-app.use(morgan())
+app.use(morgan('tiny'))
 app.use(helmet({
     crossOriginResourcePolicy : false
 })) 
+
+// Fast DB ensure middleware for cold-starts/serverless lambdas
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+    } catch (err) {
+        console.error("DB connection error in middleware:", err.message);
+    }
+    next();
+})
 
 const PORT = process.env.PORT || 8080 
 
@@ -84,12 +100,19 @@ app.use("/api/festival-offer", festivalOfferRouter)
 connectDB().then(()=>{
     if (!process.env.VERCEL) {
         app.listen(PORT,()=>{
-            console.log("Server is running",PORT)
+            console.log("Server is running on port",PORT)
             if(process.env.RESEND_API) {
                 console.log("RESEND_API is configured");
             } else {
                 console.error("RESEND_API IS MISSING! Email features will not work.");
             }
+        })
+    }
+}).catch((err) => {
+    console.error("Initial MongoDB connect warning:", err.message);
+    if (!process.env.VERCEL) {
+        app.listen(PORT,()=>{
+            console.log("Server is running on port", PORT, "(Database will reconnect automatically)");
         })
     }
 })

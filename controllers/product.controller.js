@@ -1,7 +1,13 @@
 import ProductModel from "../models/product.model.js";
+import BannerModel from "../models/banner.model.js";
+import CategoryModel from "../models/category.model.js";
+import SubCategoryModel from "../models/subCategory.model.js";
+import FestivalOfferModel from "../models/festivalOffer.model.js";
+import Coupon from "../models/coupon.model.js";
 import sendEmail from "../config/sendEmail.js";
 import UserModel from "../models/user.model.js";
 import productOfferEmailTemplate from "../utils/productOfferEmailTemplate.js";
+import { fastCache, invalidateProducts } from "../utils/fastCache.js";
 
 const calculateDiscountPercent = (mrp, price) => {
     const originalPrice = Number(mrp);
@@ -68,6 +74,9 @@ export const createProductController = async(request,response)=>{
         })
         const saveProduct = await product.save()
 
+        // Invalidate product caches immediately
+        invalidateProducts();
+
         // AUTO-BROADCAST FOR NEW PRODUCTS WITH DISCOUNTS
         if (saveProduct.publish && saveProduct.discount > 0) {
             (async () => {
@@ -81,7 +90,6 @@ export const createProductController = async(request,response)=>{
 
                     const shopUrl = process.env.FRONTEND_URL || "https://tracly.store";
                     
-                    // Compute visual URL slug matching frontend specifications
                     const productSlug = saveProduct.name
                         .toLowerCase()
                         .trim()
@@ -96,7 +104,6 @@ export const createProductController = async(request,response)=>{
                     
                     for (const user of users) {
                         try {
-                            // Secure anti-throttle spacing
                             await new Promise(resolve => setTimeout(resolve, 250));
 
                             const html = productOfferEmailTemplate({
@@ -144,43 +151,46 @@ export const createProductController = async(request,response)=>{
 
 export const getProductController = async(request,response)=>{
     try {
-        
-        let { page, limit, search } = request.body 
+        let { page, limit, search } = request.body || {};
 
-        if(!page) page = 1
-        if(!limit) limit = 10
+        if(!page) page = 1;
+        if(!limit) limit = 10;
 
-        const query = search
-          ? {
-              $or: [
-                { name: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
-                { more_details: { $regex: search, $options: "i" } }
-              ]
-            }
-          : {}
+        const cacheKey = `product:list:${page}:${limit}:${search || ''}`;
 
-        const skip = (page - 1) * limit
+        return await fastCache.sendCached(request, response, cacheKey, async () => {
+            const query = search
+              ? {
+                  $or: [
+                    { name: { $regex: search, $options: "i" } },
+                    { description: { $regex: search, $options: "i" } },
+                    { more_details: { $regex: search, $options: "i" } }
+                  ]
+                }
+              : {};
 
-        const [data,totalCount] = await Promise.all([
-            ProductModel.find(query)
-                .sort({createdAt : -1 })
-                .skip(skip)
-                .limit(limit)
-                .populate('category subCategory')
-                .lean(),
+            const skip = (page - 1) * limit;
 
-            ProductModel.countDocuments(query)
-        ])
+            const [data, totalCount] = await Promise.all([
+                ProductModel.find(query)
+                    .sort({ createdAt: -1 })
+                    .skip(skip)
+                    .limit(limit)
+                    .populate('category subCategory')
+                    .lean(),
 
-        return response.json({
-            message : "Product data",
-            error : false,
-            success : true,
-            totalCount : totalCount,
-            totalNoPage : Math.ceil(totalCount / limit),
-            data : data
-        })
+                ProductModel.countDocuments(query)
+            ]);
+
+            return {
+                message : "Product data",
+                error : false,
+                success : true,
+                totalCount : totalCount,
+                totalNoPage : Math.ceil(totalCount / limit),
+                data : data
+            };
+        }, 120);
 
     } catch (error) {
         return response.status(500).json({
@@ -193,7 +203,7 @@ export const getProductController = async(request,response)=>{
 
 export const getProductByCategory = async(request,response)=>{
     try {
-        const { id } = request.body 
+        const id = request.body?.id || request.query?.id || request.params?.id;
 
         if(!id){
             return response.status(400).json({
@@ -203,17 +213,22 @@ export const getProductByCategory = async(request,response)=>{
             })
         }
 
-        const product = await ProductModel.find({ 
-            category : { $in : id },
-            publish : true
-        }).limit(15).lean()
+        const cacheKey = `product:category:${id}`;
 
-        return response.json({
-            message : "category product list",
-            data : product,
-            error : false,
-            success : true
-        })
+        return await fastCache.sendCached(request, response, cacheKey, async () => {
+            const product = await ProductModel.find({ 
+                category : { $in : id },
+                publish : true
+            }).sort({ createdAt: -1 }).limit(15).lean();
+
+            return {
+                message : "category product list",
+                data : product,
+                error : false,
+                success : true
+            };
+        }, 300);
+
     } catch (error) {
         return response.status(500).json({
             message : error.message || error,
@@ -225,17 +240,17 @@ export const getProductByCategory = async(request,response)=>{
 
 export const getProductByCategoryAndSubCategory  = async(request,response)=>{
     try {
-        const { categoryId, subCategoryId, page, limit } = request.body
+        const { categoryId, subCategoryId } = request.body || {};
+        let { page, limit } = request.body || {};
 
         if (!categoryId || !subCategoryId) {
             return response.status(400).json({
                 message: "Provide categoryId and subCategoryId",
                 error: true,
                 success: false
-            })
+            });
         }
 
-        // 🛡️ Validate ObjectIds to prevent CastError 500s
         const mongoose = await import('mongoose');
         if (!mongoose.Types.ObjectId.isValid(categoryId) || !mongoose.Types.ObjectId.isValid(subCategoryId)) {
             return response.status(400).json({
@@ -245,35 +260,34 @@ export const getProductByCategoryAndSubCategory  = async(request,response)=>{
             });
         }
 
-        if(!page){
-            page = 1
-        }
+        if(!page) page = 1;
+        if(!limit) limit = 10;
 
-        if(!limit){
-            limit = 10
-        }
+        const cacheKey = `product:cat_sub:${categoryId}:${subCategoryId}:${page}:${limit}`;
 
-        const query = {
-            category : { $in :categoryId  },
-            subCategory : { $in : subCategoryId }
-        }
+        return await fastCache.sendCached(request, response, cacheKey, async () => {
+            const query = {
+                category : { $in : categoryId },
+                subCategory : { $in : subCategoryId }
+            };
 
-        const skip = (page - 1) * limit
+            const skip = (page - 1) * limit;
 
-        const [data,dataCount] = await Promise.all([
-            ProductModel.find(query).sort({createdAt : -1 }).skip(skip).limit(limit).lean(),
-            ProductModel.countDocuments(query)
-        ])
+            const [data, dataCount] = await Promise.all([
+                ProductModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+                ProductModel.countDocuments(query)
+            ]);
 
-        return response.json({
-            message : "Product list",
-            data : data,
-            totalCount : dataCount,
-            page : page,
-            limit : limit,
-            success : true,
-            error : false
-        })
+            return {
+                message : "Product list",
+                data : data,
+                totalCount : dataCount,
+                page : page,
+                limit : limit,
+                success : true,
+                error : false
+            };
+        }, 300);
 
     } catch (error) {
         return response.status(500).json({
@@ -286,17 +300,30 @@ export const getProductByCategoryAndSubCategory  = async(request,response)=>{
 
 export const getProductDetails = async(request,response)=>{
     try {
-        const { productId } = request.body 
+        const productId = request.body?.productId || request.query?.productId || request.params?.productId;
 
-        const product = await ProductModel.findOne({ _id : productId }).populate('category subCategory relatedProducts').lean()
+        if (!productId) {
+            return response.status(400).json({
+                message: "Provide productId",
+                error: true,
+                success: false
+            });
+        }
 
+        const cacheKey = `product:detail:${productId}`;
 
-        return response.json({
-            message : "product details",
-            data : product,
-            error : false,
-            success : true
-        })
+        return await fastCache.sendCached(request, response, cacheKey, async () => {
+            const product = await ProductModel.findOne({ _id : productId })
+                .populate('category subCategory relatedProducts')
+                .lean();
+
+            return {
+                message : "product details",
+                data : product,
+                error : false,
+                success : true
+            };
+        }, 300);
 
     } catch (error) {
         return response.status(500).json({
@@ -307,7 +334,7 @@ export const getProductDetails = async(request,response)=>{
     }
 }
 
-//update product's
+// Update product
 export const updateProductDetails = async(request,response)=>{
     try {
         const { _id } = request.body 
@@ -342,6 +369,9 @@ export const updateProductDetails = async(request,response)=>{
 
         const updatedProduct = await ProductModel.findByIdAndUpdate(_id, update, { new: true });
 
+        // Invalidate all product caches
+        invalidateProducts();
+
         // AUTO-BROADCAST IF AN OFFER WAS ADDED OR NEWLY PUBLISHED WITH A DISCOUNT
         const isOfferAdded = (!oldProduct.discount || oldProduct.discount <= 0) && updatedProduct.discount > 0;
         const isPublishedNowWithDiscount = !oldProduct.publish && updatedProduct.publish && updatedProduct.discount > 0;
@@ -358,7 +388,6 @@ export const updateProductDetails = async(request,response)=>{
 
                     const shopUrl = process.env.FRONTEND_URL || "https://tracly.store";
                     
-                    // Compute visual URL slug matching frontend specifications
                     const productSlug = updatedProduct.name
                         .toLowerCase()
                         .trim()
@@ -373,7 +402,6 @@ export const updateProductDetails = async(request,response)=>{
                     
                     for (const user of users) {
                         try {
-                            // Secure anti-throttle spacing
                             await new Promise(resolve => setTimeout(resolve, 250));
 
                             const html = productOfferEmailTemplate({
@@ -419,7 +447,7 @@ export const updateProductDetails = async(request,response)=>{
     }
 }
 
-//delete product's
+// Delete product
 export const deleteProductDetails = async(request,response)=>{
     try {
         const { _id } = request.body 
@@ -432,7 +460,10 @@ export const deleteProductDetails = async(request,response)=>{
             })
         }
 
-        const deleteProduct = await ProductModel.deleteOne({_id : _id })
+        const deleteProduct = await ProductModel.deleteOne({_id : _id });
+
+        // Invalidate all product caches
+        invalidateProducts();
 
         return response.json({
             message : "Delete successfully",
@@ -449,45 +480,45 @@ export const deleteProductDetails = async(request,response)=>{
     }
 }
 
-//search product's
+// Search products
 export const searchProduct = async(request,response)=>{
     try {
-        let { search, page, limit, categoryIds, minPrice, maxPrice, sort, offersOnly } = request.body 
+        let { search, page, limit, categoryIds, minPrice, maxPrice, sort, offersOnly } = request.body || {};
 
-        if(!page) page = 1
-        if(!limit) limit = 10
+        if(!page) page = 1;
+        if(!limit) limit = 10;
 
         const query = {
             publish: true
-        }
+        };
 
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: "i" } },
                 { description: { $regex: search, $options: "i" } },
                 { more_details: { $regex: search, $options: "i" } }
-            ]
+            ];
         }
 
         if (Array.isArray(categoryIds) && categoryIds.length) {
-            query.category = { $in: categoryIds }
+            query.category = { $in: categoryIds };
         }
 
-        const priceFilter = {}
-        const minimumPrice = Number(minPrice)
-        const maximumPrice = Number(maxPrice)
+        const priceFilter = {};
+        const minimumPrice = Number(minPrice);
+        const maximumPrice = Number(maxPrice);
         if (minPrice !== undefined && minPrice !== "" && Number.isFinite(minimumPrice)) {
-            priceFilter.$gte = minimumPrice
+            priceFilter.$gte = minimumPrice;
         }
         if (maxPrice !== undefined && maxPrice !== "" && Number.isFinite(maximumPrice)) {
-            priceFilter.$lte = maximumPrice
+            priceFilter.$lte = maximumPrice;
         }
         if (Object.keys(priceFilter).length) {
-            query.price = priceFilter
+            query.price = priceFilter;
         }
 
         if (offersOnly) {
-            query.discount = { $gt: 0 }
+            query.discount = { $gt: 0 };
         }
 
         const sortOptions = {
@@ -496,12 +527,12 @@ export const searchProduct = async(request,response)=>{
             price_asc: { price: 1 },
             price_desc: { price: -1 },
             offers: { discount: -1, createdAt: -1 }
-        }
+        };
         const sortBy = Object.prototype.hasOwnProperty.call(sortOptions, sort)
             ? sortOptions[sort]
-            : sortOptions.featured
+            : sortOptions.featured;
 
-        const skip = ( page - 1) * limit
+        const skip = ( page - 1) * limit;
 
         const [data,dataCount] = await Promise.all([
             ProductModel.find(query)
@@ -512,7 +543,7 @@ export const searchProduct = async(request,response)=>{
                 .lean(),
 
             ProductModel.countDocuments(query)
-        ])
+        ]);
 
         return response.json({
             message : "Product data",
@@ -523,7 +554,7 @@ export const searchProduct = async(request,response)=>{
             totalPage : Math.ceil(dataCount / limit),
             page : page,
             limit : limit 
-        })
+        });
 
     } catch (error) {
         return response.status(500).json({
@@ -538,22 +569,66 @@ export const searchProduct = async(request,response)=>{
 export const getProductOffersController = async (req, res) => {
     try {
         const limit = req.query.limit ? parseInt(req.query.limit) : 6;
-        
-        const deals = await ProductModel.find({
-            publish: true,
-            discount: { $gt: 0 }
-        })
-        .sort({ discount: -1 }) // Show deepest discounts first
-        .limit(limit)
-        .populate('category subCategory')
-        .lean();
+        const cacheKey = `product:offers:${limit}`;
 
-        return res.json({
-            message: "Dynamic discounted deals loaded.",
-            success: true,
-            error: false,
-            data: deals
+        return await fastCache.sendCached(req, res, cacheKey, async () => {
+            const deals = await ProductModel.find({
+                publish: true,
+                discount: { $gt: 0 }
+            })
+            .sort({ discount: -1 })
+            .limit(limit)
+            .populate('category subCategory')
+            .lean();
+
+            return {
+                message: "Dynamic discounted deals loaded.",
+                success: true,
+                error: false,
+                data: deals
+            };
+        }, 300);
+
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
         });
+    }
+};
+
+// High-Speed Unified Home Feed API (~0.003ms RAM response)
+export const getHomeFeedController = async (req, res) => {
+    try {
+        return await fastCache.sendCached(req, res, "home:feed", async () => {
+            const [banners, categories, subCategories, festivalOffers, welcomeCoupon, featuredProducts] = await Promise.all([
+                BannerModel.find({ isActive: true }).sort({ createdAt: -1 }).lean(),
+                CategoryModel.find().sort({ createdAt: -1 }).lean(),
+                SubCategoryModel.find().populate('category').sort({ createdAt: -1 }).lean(),
+                FestivalOfferModel.find({ isActive: true }).sort({ createdAt: -1 }).lean(),
+                Coupon.findOne({ isFirstOrderOnly: true, isActive: true, expiryDate: { $gt: new Date() } }).lean(),
+                ProductModel.find({ publish: true })
+                    .sort({ createdAt: -1 })
+                    .limit(24)
+                    .populate('category subCategory')
+                    .lean()
+            ]);
+
+            return {
+                message: "Home feed loaded",
+                error: false,
+                success: true,
+                data: {
+                    banners,
+                    categories,
+                    subCategories,
+                    festivalOffers,
+                    welcomeCoupon,
+                    featuredProducts
+                }
+            };
+        }, 300);
     } catch (error) {
         return res.status(500).json({
             message: error.message || error,

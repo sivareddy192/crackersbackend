@@ -18,6 +18,9 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
+categorySchema.index({ createdAt: -1 });
+categorySchema.index({ name: 1 });
+
 const CategoryModel = mongoose.model("category", categorySchema);
 
 export default CategoryModel;

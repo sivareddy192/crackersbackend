@@ -1,4 +1,5 @@
 import BannerModel from "../models/banner.model.js";
+import { fastCache, invalidateBanners } from "../utils/fastCache.js";
 
 export const addBannerController = async (req, res) => {
     try {
@@ -23,6 +24,7 @@ export const addBannerController = async (req, res) => {
         const saveBanner = await banner.save();
 
         if (saveBanner) {
+            invalidateBanners();
             return res.json({
                 message: "Banner added successfully",
                 data: saveBanner,
@@ -41,14 +43,15 @@ export const addBannerController = async (req, res) => {
 
 export const getBannerController = async (req, res) => {
     try {
-        const data = await BannerModel.find().sort({ createdAt: -1 }).lean();
-
-        return res.json({
-            message: "Banner list retrieved",
-            data: data,
-            error: false,
-            success: true
-        });
+        return await fastCache.sendCached(req, res, "banner:all", async () => {
+            const data = await BannerModel.find().sort({ createdAt: -1 }).lean();
+            return {
+                message: "Banner list retrieved",
+                data: data,
+                error: false,
+                success: true
+            };
+        }, 300);
     } catch (error) {
         return res.status(500).json({
             message: error.message || error,
@@ -70,6 +73,8 @@ export const updateBannerController = async (req, res) => {
             link
         });
 
+        invalidateBanners();
+
         return res.json({
             message: "Banner updated successfully",
             data: update,
@@ -90,6 +95,8 @@ export const deleteBannerController = async (req, res) => {
         const { _id } = req.body;
 
         const deleteBanner = await BannerModel.deleteOne({ _id: _id });
+
+        invalidateBanners();
 
         return res.json({
             message: "Banner deleted successfully",

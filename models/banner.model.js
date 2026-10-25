@@ -25,6 +25,9 @@ const bannerSchema = new mongoose.Schema({
     timestamps : true
 })
 
+bannerSchema.index({ isActive: 1, createdAt: -1 });
+bannerSchema.index({ createdAt: -1 });
+
 const BannerModel = mongoose.model('banner',bannerSchema)
 
 export default BannerModel

@@ -2,6 +2,7 @@ import FestivalOfferModel from "../models/festivalOffer.model.js";
 import sendEmail from "../config/sendEmail.js";
 import UserModel from "../models/user.model.js";
 import festivalOfferEmailTemplate from "../utils/festivalOfferEmailTemplate.js";
+import { fastCache, invalidateFestivalOffers } from "../utils/fastCache.js";
 
 export const addFestivalOfferController = async (req, res) => {
     try {
@@ -82,6 +83,8 @@ export const addFestivalOfferController = async (req, res) => {
             }
         })().catch(bgErr => console.error("[Festive-Broadcast Warning] Background thread crashed:", bgErr));
 
+        invalidateFestivalOffers();
+
         return res.json({
             message: "Festival offer created successfully",
             data: saveOffer,
@@ -99,15 +102,15 @@ export const addFestivalOfferController = async (req, res) => {
 
 export const getFestivalOfferController = async (req, res) => {
     try {
-        // Return ALL offers for management; client can filter active ones or sorting can place active first
-        const data = await FestivalOfferModel.find().sort({ createdAt: -1 }).lean();
-
-        return res.json({
-            message: "Festival offers retrieved successfully",
-            data: data,
-            error: false,
-            success: true
-        });
+        return await fastCache.sendCached(req, res, "festivalOffer:all", async () => {
+            const data = await FestivalOfferModel.find().sort({ createdAt: -1 }).lean();
+            return {
+                message: "Festival offers retrieved successfully",
+                data: data,
+                error: false,
+                success: true
+            };
+        }, 300);
     } catch (error) {
         return res.status(500).json({
             message: error.message || error,
@@ -139,6 +142,8 @@ export const updateFestivalOfferController = async (req, res) => {
             link
         });
 
+        invalidateFestivalOffers();
+
         return res.json({
             message: "Festival offer updated successfully",
             data: update,
@@ -167,6 +172,8 @@ export const deleteFestivalOfferController = async (req, res) => {
         }
 
         const deleteOffer = await FestivalOfferModel.deleteOne({ _id: _id });
+
+        invalidateFestivalOffers();
 
         return res.json({
             message: "Festival offer deleted successfully",

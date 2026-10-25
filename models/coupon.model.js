@@ -65,6 +65,9 @@ const couponSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+couponSchema.index({ isActive: 1, expiryDate: 1 });
+couponSchema.index({ createdAt: -1 });
+
 couponSchema.post("save", function (error, doc, next) {
   if (error.name === "MongoServerError" && error.code === 11000) {
     next(new Error("Coupon code already exists"));

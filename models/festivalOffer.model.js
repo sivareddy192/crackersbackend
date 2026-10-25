@@ -33,6 +33,9 @@ const festivalOfferSchema = new mongoose.Schema({
     timestamps : true
 })
 
+festivalOfferSchema.index({ isActive: 1, createdAt: -1 });
+festivalOfferSchema.index({ createdAt: -1 });
+
 const FestivalOfferModel = mongoose.model('festivalOffer', festivalOfferSchema)
 
 export default FestivalOfferModel

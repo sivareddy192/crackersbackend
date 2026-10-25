@@ -1,6 +1,7 @@
 import CategoryModel from "../models/category.model.js";
 import SubCategoryModel from "../models/subCategory.model.js";
 import ProductModel from "../models/product.model.js";
+import { fastCache, invalidateCategories } from "../utils/fastCache.js";
 
 export const UploadCategoryController = async(req,res)=>{
     try {
@@ -29,6 +30,8 @@ export const UploadCategoryController = async(req,res)=>{
             })
         }
 
+        invalidateCategories();
+
         return res.json({
             message : "Added Successfully",
             data : saveCategory,
@@ -47,13 +50,14 @@ export const UploadCategoryController = async(req,res)=>{
 
 export const getCategoryController = async (req, res) => {
   try {
-    const data = await CategoryModel.find().sort({createdAt: -1}).lean();
-
-    return res.json({
-      data:data,
-      error: false,
-      success: true
-    });
+    return await fastCache.sendCached(req, res, "category:all", async () => {
+      const data = await CategoryModel.find().sort({ createdAt: -1 }).lean();
+      return {
+        data: data,
+        error: false,
+        success: true
+      };
+    }, 300);
   } catch (error) {
     return res.status(500).json({
       message: error.message || error,
@@ -80,6 +84,8 @@ export const updateCategoryController = async (req, res) => {
       { name, image },
       { new: true }
     );
+
+    invalidateCategories();
 
     return res.json({
       message: "Category updated",
@@ -125,6 +131,8 @@ export const deleteCategoryController = async (req, res) => {
     }
 
     const deleted = await CategoryModel.deleteOne({ _id });
+
+    invalidateCategories();
 
     return res.json({
       message: "Category deleted",

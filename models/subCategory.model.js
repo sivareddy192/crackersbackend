@@ -22,7 +22,9 @@ const subCategorySchema =new mongoose.Schema({
 })
 
 // Speed up sub-category by category group queries
+subCategorySchema.index({ category: 1, createdAt: -1 });
 subCategorySchema.index({ category: 1 });
+subCategorySchema.index({ createdAt: -1 });
 
 const subCategoryModel = mongoose.model('subCategory',subCategorySchema)
 

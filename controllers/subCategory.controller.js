@@ -1,4 +1,5 @@
 import SubCategoryModel from "../models/subCategory.model.js";
+import { fastCache, invalidateSubCategories } from "../utils/fastCache.js";
 
 export const UpdatedSubCategoryController = async (req, res) => {
   try {
@@ -14,6 +15,8 @@ export const UpdatedSubCategoryController = async (req, res) => {
 
     const sub = new SubCategoryModel({ name, image, category });
     const saved = await sub.save();
+
+    invalidateSubCategories();
 
     return res.json({
       message: "Subcategory created",
@@ -32,17 +35,19 @@ export const UpdatedSubCategoryController = async (req, res) => {
 
 export const getSubCategoryController = async (req, res) => {
   try {
-    const data = await SubCategoryModel.find()
-      .populate("category")
-      .sort({ createdAt: -1 })
-      .lean();
+    return await fastCache.sendCached(req, res, "subcategory:all", async () => {
+      const data = await SubCategoryModel.find()
+        .populate("category")
+        .sort({ createdAt: -1 })
+        .lean();
 
-    return res.json({
-      message: "Subcategory list",
-      data,
-      success: true,
-      error: false
-    });
+      return {
+        message: "Subcategory list",
+        data,
+        success: true,
+        error: false
+      };
+    }, 300);
   } catch (error) {
     return res.status(500).json({
       message: error.message,
@@ -70,6 +75,8 @@ export const updateSubCategoryController = async (req, res) => {
       { new: true }
     );
 
+    invalidateSubCategories();
+
     return res.json({
       message: "Subcategory updated",
       data: updated,
@@ -79,8 +86,8 @@ export const updateSubCategoryController = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: error.message,
-      success: false,
-      error: true
+      error: true,
+      success: false
     });
   }
 };
@@ -98,6 +105,8 @@ export const deleteSubCategoryController = async (req, res) => {
     }
 
     const deleted = await SubCategoryModel.findByIdAndDelete(_id);
+
+    invalidateSubCategories();
 
     return res.json({
       message: "Subcategory deleted",
