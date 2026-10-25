@@ -6,7 +6,6 @@ export const addToCartItemController = async(request,response)=>{
     try {
         const userId = request.userId
         const { productId, unit } = request.body
-        console.log("Adding to cart - User:", userId, "Product:", productId, "Unit:", unit);
         
         if(!productId){
             return response.status(402).json({
@@ -57,14 +56,11 @@ export const addToCartItemController = async(request,response)=>{
             success: true
         });
 
-        
     } catch (error) {
-        console.error("ADD TO CART ERROR:", error);
         return response.status(500).json({
             message : error.message || "Internal Server Error",
             error : true,
             success : false,
-            details: error.toString()
         })
     }
 }
@@ -73,14 +69,18 @@ export const getCartItemController = async(request,response)=>{
     try {
         const userId = request.userId
 
-        const cartItem =  await CartProductModel.find({
+        // Add select on productId to only fetch required fields for faster populate
+        const cartItem = await CartProductModel.find({
             userId : userId
-        }).populate('productId').lean()
+        })
+        .sort({ createdAt: -1 })
+        .populate({
+            path: 'productId',
+            select: 'name image category subCategory unit stock price mrp discount description variants publish'
+        })
+        .lean()
 
-        console.log(`Fetched ${cartItem.length} items for user ${userId}`);
-        const validItems = cartItem.filter(item => item.productId);
-        
-        console.log(`Returning ${validItems.length} valid items`);
+        const validItems = cartItem.filter(item => item.productId && item.productId.publish !== false);
 
         return response.json({
             data : validItems,
@@ -112,7 +112,10 @@ export const updateCartItemQtyController = async (request, response) => {
         const cartItem = await CartProductModel.findOne({ 
             _id, 
             userId 
-        }).populate("productId")
+        }).populate({
+            path: "productId",
+            select: "stock variants unit"
+        })
 
         if (!cartItem) {
             return response.status(404).json({
