@@ -23,15 +23,30 @@ import couponRouter from './routes/coupon.route.js'
 import reviewRouter from './routes/review.route.js'
 import notificationRouter from './routes/notification.route.js'
 import festivalOfferRouter from './routes/festivalOffer.route.js'
-
 const app = express()
+
+const rawFrontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim() : ""
+const cleanFrontendUrl = rawFrontendUrl.replace(/\/+$/, "")
+
+const allowedOrigins = [
+    cleanFrontendUrl,
+    rawFrontendUrl,
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "https://tracly-crackers.vercel.app",
+    "https://trace-1.vercel.app"
+].filter(Boolean)
+
 app.use(cors({
     credentials : true,
-    origin : [
-        process.env.FRONTEND_URL,
-        "http://localhost:5173",
-        // "https://trace-1.vercel.app"
-    ].filter(Boolean)
+    origin : (origin, callback) => {
+        if (!origin) return callback(null, true)
+        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            return callback(null, true)
+        }
+        return callback(null, false)
+    }
 }))
 app.use(express.json())
 app.use(compression())
@@ -66,16 +81,18 @@ app.use("/api/review", reviewRouter)
 app.use("/api/notification", notificationRouter)
 app.use("/api/festival-offer", festivalOfferRouter)
 
-
-
-
 connectDB().then(()=>{
-    app.listen(PORT,()=>{
-        console.log("Server is running",PORT)
-        if(process.env.RESEND_API) {
-            console.log("RESEND_API is configured");
-        } else {
-            console.error("RESEND_API IS MISSING! Email features will not work.");
-        }
-    })
+    if (!process.env.VERCEL) {
+        app.listen(PORT,()=>{
+            console.log("Server is running",PORT)
+            if(process.env.RESEND_API) {
+                console.log("RESEND_API is configured");
+            } else {
+                console.error("RESEND_API IS MISSING! Email features will not work.");
+            }
+        })
+    }
 })
+
+export default app
+
