@@ -15,17 +15,14 @@ async function connectDB() {
     return null;
   }
 
-  // If already connected, return immediately
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
-  // If connection is in progress, await the existing connection promise
   if (mongoose.connection.readyState === 2 && cached.promise) {
     return await cached.promise;
   }
 
-  // If disconnected or connection was never initiated, reset cache and connect
   if (mongoose.connection.readyState === 0 || !cached.promise) {
     cached.promise = null;
     cached.conn = null;
