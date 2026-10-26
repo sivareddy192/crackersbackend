@@ -7,14 +7,12 @@ const welcomeOfferTemplate = ({
   shopUrl,
   deals = []
 }) => {
-  // Clean first name
   const firstName = name ? name.split(' ')[0] : 'Friend';
 
-  // Generate HTML for Deals grid
   let dealsHtml = '';
   if (deals && deals.length > 0) {
     dealsHtml = `
-    <!-- Header Section -->
+    
     <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 15px;">
       <tr>
         <td align="left">
@@ -26,7 +24,7 @@ const welcomeOfferTemplate = ({
       </tr>
     </table>
 
-    <!-- Product Grid -->
+    
     <table width="100%" cellspacing="0" cellpadding="0" border="0" style="table-layout: fixed; margin-bottom: 20px;">
       <tr>
         ${deals.slice(0, 3).map((deal, idx) => {
@@ -37,7 +35,7 @@ const welcomeOfferTemplate = ({
           <td width="33.33%" valign="top" style="padding: 0 ${idx === 1 ? '8px' : '0px'};">
             <div style="background: #ffffff; border: 1px solid #edf2f7; border-radius: 16px; padding: 12px; text-align: center;">
               
-              <!-- Discount Badge (Robust flow for Gmail) -->
+              
               ${discVal > 0 ? `
                 <div style="text-align: left; margin-bottom: 6px; height: 18px;">
                   <span style="background-color: #16a34a; color: #ffffff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 50px; text-transform: uppercase; display: inline-block;">
@@ -46,12 +44,12 @@ const welcomeOfferTemplate = ({
                 </div>
               ` : '<div style="height: 18px; margin-bottom: 6px;"></div>'}
               
-              <!-- Image Shell -->
+              
               <div style="width: 100%; background-color: #f8fafc; background: #f8fafc; border-radius: 12px; text-align: center; padding: 10px 0;">
                 <img src="${imgUrl}" style="max-width: 80px; height: 80px; object-fit: contain; display: block; margin: 0 auto;" />
               </div>
 
-              <!-- Meta -->
+              
               <div style="margin-top: 12px; text-align: left;">
                 <h4 style="margin: 0; font-size: 11px; font-weight: 850; color: #1e293b; height: 26px; overflow: hidden; line-height: 1.2; text-transform: uppercase; letter-spacing: -0.2px;">
                   ${deal.name}
@@ -92,14 +90,14 @@ const welcomeOfferTemplate = ({
       <tr>
         <td align="center">
 
-          <!-- Primary Card Container -->
+          
           <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
             
-            <!-- Dynamic Gradient Splash Header -->
+            
             <tr>
               <td style="background-color: #ef4444; background: linear-gradient(135deg, #f97316 0%, #ef4444 55%, #a855f7 100%); padding: 60px 40px; text-align: center; color: #ffffff; border-top-left-radius: 24px; border-top-right-radius: 24px;">
                 
-                <!-- Title Ribbon -->
+                
                 <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.4); padding: 5px 16px; border-radius: 50px; margin-bottom: 16px; font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
                   Welcome Gift 🎁
                 </div>
@@ -114,14 +112,14 @@ const welcomeOfferTemplate = ({
               </td>
             </tr>
 
-            <!-- Inner Dashboard Region -->
+            
             <tr>
               <td style="background: #f8fafc; padding: 30px 30px 15px 30px;">
                 
-                <!-- EXCLUSIVE PROMO BLOCK -->
+                
                 <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 25px;">
                   
-                  <!-- Header row -->
+                  
                   <tr>
                     <td align="left" style="padding-bottom: 10px;">
                       <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">Exclusive Starter Promo</span>
@@ -131,12 +129,12 @@ const welcomeOfferTemplate = ({
                     </td>
                   </tr>
 
-                  <!-- Coupon card core -->
+                  
                   <tr>
                     <td colspan="2">
                       <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #ffffff; border: 2px dashed #f97316; border-radius: 20px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.05);">
                         <tr>
-                          <!-- Info side -->
+                          
                           <td valign="middle">
                             <h2 style="margin: 0; font-size: 22px; font-weight: 900; color: #1e293b; letter-spacing: -0.5px;">
                               Get ${discountPercent}% OFF Your Order
@@ -146,7 +144,7 @@ const welcomeOfferTemplate = ({
                               ${maxDiscount > 0 ? ` • Max savings ₹${maxDiscount}` : ''}
                             </p>
                           </td>
-                          <!-- Button side -->
+                          
                           <td width="140" valign="middle" align="right">
                             <div style="background-color: #f97316; background: linear-gradient(to right, #f97316, #db2777); color: #ffffff; font-weight: 900; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; padding: 12px 20px; border-radius: 12px; text-align: center;">
                               ${code}
@@ -159,10 +157,10 @@ const welcomeOfferTemplate = ({
 
                 </table>
 
-                <!-- DYNAMIC PRODUCT DEALS SECTION -->
+                
                 ${dealsHtml}
 
-                <!-- MAIN ACTION BUTTON -->
+                
                 <table width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 25px 0 10px 0;">
                   <tr>
                     <td align="center">
@@ -179,7 +177,7 @@ const welcomeOfferTemplate = ({
               </td>
             </tr>
 
-            <!-- Simple Clean Footer -->
+            
             <tr>
               <td style="background: #ffffff; padding: 30px 40px; text-align: center; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; line-height: 1.5;">

@@ -1,4 +1,3 @@
- // models/Product.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -109,10 +108,8 @@ productSchema.virtual("productUrl").get(function () {
   return `/product/${this.slug}`;
 });
 
-// Optimize searching with text indexing
 productSchema.index({ name: "text", description: "text" });
 
-// Optimize product lookups and sorting
 productSchema.index({ publish: 1, category: 1, createdAt: -1 });
 productSchema.index({ publish: 1, subCategory: 1, createdAt: -1 });
 productSchema.index({ publish: 1, discount: -1 });

@@ -19,7 +19,6 @@ const optionalAuth = async(request,response,next)=>{
 
         request.userId = decode.id
 
-        // Check if user status is active
         const user = await UserModel.findById(decode.id).select('status')
         if (user && user.status !== "Active") {
             request.userId = null;

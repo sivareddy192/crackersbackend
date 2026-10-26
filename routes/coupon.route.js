@@ -11,7 +11,6 @@ import { fastCache, invalidateCoupons } from "../utils/fastCache.js";
 
 const couponRouter = express.Router();
 
-// CREATE Coupon (Admin)
 couponRouter.post("/create", auth, admin, async (req, res) => {
 
     try {
@@ -46,7 +45,6 @@ couponRouter.post("/create", auth, admin, async (req, res) => {
         await coupon.save();
         invalidateCoupons();
 
-        // AUTO-BROADCAST TO ALL USERS FOR NEW PUBLIC ACTIVE COUPONS
         if (coupon.isActive && !coupon.isFirstOrderOnly) {
             (async () => {
                 try {
@@ -64,7 +62,6 @@ couponRouter.post("/create", auth, admin, async (req, res) => {
                     
                     for (const user of users) {
                         try {
-                            // Anti-rate limit throttling
                             await new Promise(resolve => setTimeout(resolve, 250));
 
                             const html = offerEmailTemplate({
@@ -85,7 +82,6 @@ couponRouter.post("/create", auth, admin, async (req, res) => {
                                 html: html
                             });
                         } catch (dispatchErr) {
-                            // Fail silently for single user failures so loop continues
                         }
                     }
                     console.log(`[Auto-Broadcast] Finished blast for Coupon: ${coupon.code} successfully.`);
@@ -101,7 +97,6 @@ couponRouter.post("/create", auth, admin, async (req, res) => {
     }
 });
 
-// APPLY COUPON
 couponRouter.post("/apply", auth, async (req, res) => {
     try {
         const { code, totalAmount } = req.body;
@@ -115,7 +110,6 @@ couponRouter.post("/apply", auth, async (req, res) => {
         if (!coupon)
             return res.json({ success: false, message: "Invalid coupon" });
 
-        // Global check: Has this user EVER used this code?
         if (user.usedCoupons && user.usedCoupons.includes(code.toUpperCase())) {
             return res.json({
                 success: false,
@@ -123,22 +117,18 @@ couponRouter.post("/apply", auth, async (req, res) => {
             });
         }
 
-        // Check Start Date
         if (coupon.startDate && new Date(coupon.startDate) > new Date())
             return res.json({ success: false, message: "Coupon is not yet active" });
 
-        // Check Expiry Date
         if (new Date(coupon.expiryDate) < new Date())
             return res.json({ success: false, message: "Coupon expired" });
 
-        // Check Min Amount
         if (totalAmount < coupon.minAmount)
             return res.json({
                 success: false,
                 message: `Minimum order amount ₹${coupon.minAmount} required`,
             });
 
-        // Check First User Only
         if (coupon.isFirstOrderOnly) {
             const orderCount = await OrderModel.countDocuments({ userId });
             if (orderCount > 0) {
@@ -149,7 +139,6 @@ couponRouter.post("/apply", auth, async (req, res) => {
             }
         }
 
-        // Check Usage Limit Per User
         if (coupon.usageLimitPerUser > 0) {
             const timesUsed = coupon.usedBy.filter(id => id.toString() === userId).length;
             if (timesUsed >= coupon.usageLimitPerUser) {
@@ -176,10 +165,8 @@ couponRouter.post("/apply", auth, async (req, res) => {
     }
 });
 
-// GET ALL COUPONS (Customers & Admin)
 couponRouter.get("/all", async (req, res) => {
     try {
-        // Run DB auto-expiration lazily in background so it never blocks HTTP request
         setImmediate(async () => {
             try {
                 await Coupon.updateMany(
@@ -201,11 +188,9 @@ couponRouter.get("/all", async (req, res) => {
                     }
                 }
             } catch (err) {
-                // Ignore token errors, treat as customer
             }
         }
 
-        // Admin gets fresh live coupons without caching
         if (isAdmin) {
             const now = new Date();
             let coupons = await Coupon.find({}).sort({ createdAt: -1 }).lean();
@@ -220,7 +205,6 @@ couponRouter.get("/all", async (req, res) => {
             });
         }
 
-        // Public / Customers get instantaneous response from RAM cache (~0.003ms)
         return await fastCache.sendCached(req, res, "coupon:public", async () => {
             const now = new Date();
             let coupons = await Coupon.find({
@@ -246,7 +230,6 @@ couponRouter.get("/all", async (req, res) => {
 });
 
 
-// UPDATE COUPON (Admin)
 couponRouter.put("/update/:id", auth, admin, async (req, res) => {
 
     try {
@@ -264,7 +247,6 @@ couponRouter.put("/update/:id", auth, admin, async (req, res) => {
             { new: true }
         );
 
-        // AUTO-BROADCAST IF A COUPON WAS ACTIVATED
         const wasActivated = !oldCoupon.isActive && updatedCoupon.isActive;
 
         if (wasActivated && !updatedCoupon.isFirstOrderOnly) {
@@ -284,7 +266,6 @@ couponRouter.put("/update/:id", auth, admin, async (req, res) => {
                     
                     for (const user of users) {
                         try {
-                            // Anti-rate limit throttling
                             await new Promise(resolve => setTimeout(resolve, 250));
 
                             const html = offerEmailTemplate({
@@ -305,7 +286,6 @@ couponRouter.put("/update/:id", auth, admin, async (req, res) => {
                                 html: html
                             });
                         } catch (dispatchErr) {
-                            // Fail silently for single user failures so loop continues
                         }
                     }
                     console.log(`[Auto-Broadcast] Finished blast for Coupon: ${updatedCoupon.code} successfully.`);
@@ -328,7 +308,6 @@ couponRouter.put("/update/:id", auth, admin, async (req, res) => {
     }
 });
 
-// DELETE COUPON (Admin)
 couponRouter.delete("/delete/:id", auth, admin, async (req, res) => {
 
     try {
@@ -345,7 +324,6 @@ couponRouter.delete("/delete/:id", auth, admin, async (req, res) => {
     }
 });
 
-// SEND OFFER EMAIL TO ALL USERS (Admin)
 couponRouter.post("/send-offer-email", auth, admin, async (req, res) => {
     try {
         const { couponId, subject, headline, description } = req.body;
@@ -359,7 +337,6 @@ couponRouter.post("/send-offer-email", auth, admin, async (req, res) => {
             return res.json({ success: false, message: "Coupon not found" });
         }
 
-        // Fetch all Gmail users
         const users = await UserModel.find(
             { email: { $regex: /@gmail\.com$/i } }, 
             "name email"
@@ -372,13 +349,11 @@ couponRouter.post("/send-offer-email", auth, admin, async (req, res) => {
         const shopUrl = process.env.FRONTEND_URL || "https://tracly.store";
         const emailSubject = subject || `🎉 Special Offer! Get ${coupon.discountPercent}% OFF on Trace!`;
 
-        // Immediately respond to client to avoid timing out
         res.json({ 
             success: true, 
             message: `Initiated email broadcast to ${users.length} users successfully.` 
         });
 
-        // Execute sending in the background safely
         (async () => {
             console.log(`[Offer Broadcast] Starting broadcast to ${users.length} users for coupon: ${coupon.code}`);
             let successCount = 0;
@@ -386,7 +361,6 @@ couponRouter.post("/send-offer-email", auth, admin, async (req, res) => {
 
             for (const user of users) {
                 try {
-                    // Basic anti-rate-limiting delay of 200ms between individual Resend calls
                     await new Promise(resolve => setTimeout(resolve, 200));
 
                     const html = offerEmailTemplate({

@@ -56,20 +56,13 @@ class FastMemoryCache {
     this.store.clear();
   }
 
-  /**
-   * Ultra-fast cached responder:
-   * Serves directly from V8 memory in ~0.003ms (microseconds) on cache hit.
-   * Emits ETag and standard Edge/Browser Cache-Control headers.
-   */
   async sendCached(req, res, cacheKey, fetcher, ttlSeconds = 300) {
     const startHr = process.hrtime.bigint();
 
-    // 1. Try RAM Cache
     const cached = this.get(cacheKey);
     if (cached) {
       const durationMs = Number(process.hrtime.bigint() - startHr) / 1e6;
 
-      // Conditional GET (HTTP 304 Not Modified)
       if (req.headers["if-none-match"] === cached.etag) {
         res.setHeader("X-Cache", "HIT-304");
         res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
@@ -87,11 +80,9 @@ class FastMemoryCache {
       return res.status(200).send(cached.jsonString);
     }
 
-    // 2. Cache Miss: Execute DB query
     const data = await fetcher();
     const durationMs = Number(process.hrtime.bigint() - startHr) / 1e6;
 
-    // Cache the fresh result
     const stored = this.set(cacheKey, data, ttlSeconds);
 
     res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -108,7 +99,6 @@ class FastMemoryCache {
 
 export const fastCache = new FastMemoryCache();
 
-// Specific Cache Invalidation Helpers
 export const invalidateProducts = () => {
   fastCache.clearNamespace("product:");
   fastCache.delete("home:feed");

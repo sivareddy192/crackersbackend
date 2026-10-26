@@ -43,7 +43,6 @@ const addressSchema = new mongoose.Schema({
     timestamps : true
 })
 
-// Speed up address retrieval per user
 addressSchema.index({ userId: 1 });
 
 const AddressModel = mongoose.model('address',addressSchema)

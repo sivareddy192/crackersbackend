@@ -91,7 +91,6 @@ const userSchema = new mongoose.Schema({
     timestamps : true
 })
 
-// Faster role-based dashboards and filtering
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 

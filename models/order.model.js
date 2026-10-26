@@ -18,7 +18,6 @@ const orderSchema = new mongoose.Schema(
       ref: "product",
     },
 
-    //FIXED: product snapshot stored properly
     product_details: {
       name: {
         type: String,
@@ -26,7 +25,7 @@ const orderSchema = new mongoose.Schema(
       },
       image: {
         type: [String],
-        default: [], // always array
+        default: [],
       },
       quantity: {
         type: Number,
@@ -34,7 +33,7 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
-    delivery_address: {   // ✅ ADD THIS
+    delivery_address: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "address"
   },
@@ -117,7 +116,6 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Performance indexing
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ orderId: 1 });
 orderSchema.index({ status: 1 });

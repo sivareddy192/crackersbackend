@@ -28,7 +28,6 @@ export const addFestivalOfferController = async (req, res) => {
         const offer = new FestivalOfferModel(payload);
         const saveOffer = await offer.save();
 
-        // 🚀 ASYNC BACKGROUND EMAIL BROADCAST TO SHOPPERS
         (async () => {
             try {
                 const users = await UserModel.find(
@@ -40,7 +39,6 @@ export const addFestivalOfferController = async (req, res) => {
 
                 const shopUrl = process.env.FRONTEND_URL || "https://tracly.store";
                 
-                // Parse target URL resolving either absolute or relative paths
                 let targetUrl = shopUrl;
                 if (saveOffer.link) {
                     if (saveOffer.link.startsWith("http://") || saveOffer.link.startsWith("https://")) {
@@ -55,7 +53,6 @@ export const addFestivalOfferController = async (req, res) => {
 
                 for (const user of users) {
                     try {
-                        // Secure spacing throttle
                         await new Promise(resolve => setTimeout(resolve, 250));
 
                         const html = festivalOfferEmailTemplate({
@@ -74,7 +71,6 @@ export const addFestivalOfferController = async (req, res) => {
                             html: html
                         });
                     } catch (sendErr) {
-                        // Supress single fail error to sustain batch blasting
                     }
                 }
                 console.log(`[Festive-Broadcast] Successfully dispatched blast for '${saveOffer.title}'.`);
@@ -211,7 +207,6 @@ export const sendFestivalOfferBlastController = async (req, res) => {
             });
         }
 
-        // 📢 INITIATE MANUALLY TRIGGERED ASYNC EMAIL BLAST
         (async () => {
             try {
                 const users = await UserModel.find(
@@ -237,7 +232,6 @@ export const sendFestivalOfferBlastController = async (req, res) => {
 
                 for (const user of users) {
                     try {
-                        // Safe pacing interval
                         await new Promise(resolve => setTimeout(resolve, 250));
 
                         const html = festivalOfferEmailTemplate({
@@ -256,7 +250,6 @@ export const sendFestivalOfferBlastController = async (req, res) => {
                             html: html
                         });
                     } catch (mailErr) {
-                        // Skip recipient if failed
                     }
                 }
                 console.log(`[Manual-Festive-Blast] Finished distributing campaign: '${offer.title}'.`);

@@ -74,10 +74,8 @@ export const createProductController = async(request,response)=>{
         })
         const saveProduct = await product.save()
 
-        // Invalidate product caches immediately
         invalidateProducts();
 
-        // AUTO-BROADCAST FOR NEW PRODUCTS WITH DISCOUNTS
         if (saveProduct.publish && saveProduct.discount > 0) {
             (async () => {
                 try {
@@ -123,7 +121,6 @@ export const createProductController = async(request,response)=>{
                                 html: html
                             });
                         } catch (dispatchErr) {
-                            // Quiet fail single recipients to sustain main loop
                         }
                     }
                     console.log(`[Product-Broadcast] Success: Email blast for '${saveProduct.name}' complete.`);
@@ -334,7 +331,6 @@ export const getProductDetails = async(request,response)=>{
     }
 }
 
-// Update product
 export const updateProductDetails = async(request,response)=>{
     try {
         const { _id } = request.body 
@@ -369,10 +365,8 @@ export const updateProductDetails = async(request,response)=>{
 
         const updatedProduct = await ProductModel.findByIdAndUpdate(_id, update, { new: true });
 
-        // Invalidate all product caches
         invalidateProducts();
 
-        // AUTO-BROADCAST IF AN OFFER WAS ADDED OR NEWLY PUBLISHED WITH A DISCOUNT
         const isOfferAdded = (!oldProduct.discount || oldProduct.discount <= 0) && updatedProduct.discount > 0;
         const isPublishedNowWithDiscount = !oldProduct.publish && updatedProduct.publish && updatedProduct.discount > 0;
 
@@ -421,7 +415,6 @@ export const updateProductDetails = async(request,response)=>{
                                 html: html
                             });
                         } catch (dispatchErr) {
-                            // Quiet fail single recipients to sustain main loop
                         }
                     }
                     console.log(`[Product-Broadcast] Success: Email blast for '${updatedProduct.name}' complete.`);
@@ -447,7 +440,6 @@ export const updateProductDetails = async(request,response)=>{
     }
 }
 
-// Delete product
 export const deleteProductDetails = async(request,response)=>{
     try {
         const { _id } = request.body 
@@ -462,7 +454,6 @@ export const deleteProductDetails = async(request,response)=>{
 
         const deleteProduct = await ProductModel.deleteOne({_id : _id });
 
-        // Invalidate all product caches
         invalidateProducts();
 
         return response.json({
@@ -480,7 +471,6 @@ export const deleteProductDetails = async(request,response)=>{
     }
 }
 
-// Search products
 export const searchProduct = async(request,response)=>{
     try {
         let { search, page, limit, categoryIds, minPrice, maxPrice, sort, offersOnly } = request.body || {};
@@ -565,7 +555,6 @@ export const searchProduct = async(request,response)=>{
     }
 }
 
-// Get top active product deals / offers
 export const getProductOffersController = async (req, res) => {
     try {
         const limit = req.query.limit ? parseInt(req.query.limit) : 6;
@@ -598,7 +587,6 @@ export const getProductOffersController = async (req, res) => {
     }
 };
 
-// High-Speed Unified Home Feed API (~0.003ms RAM response)
 export const getHomeFeedController = async (req, res) => {
     try {
         return await fastCache.sendCached(req, res, "home:feed", async () => {

@@ -56,7 +56,6 @@ export const getAssignedOrders = async (req, res) => {
         return res.status(500).json({ message: error.message, error: true });
     }
 };
-// Trigger OTP when starting delivery process
 export const sendDeliveryOTP = async (req, res) => {
     try {
         const { orderId } = req.body;
@@ -83,7 +82,6 @@ export const sendDeliveryOTP = async (req, res) => {
         }
         await order.save();
 
-        // Send Email to customer
         try {
             await sendEmail({
                 sendTo: order.userId.email,
@@ -95,7 +93,6 @@ export const sendDeliveryOTP = async (req, res) => {
                 })
             });
 
-            // ✅ Notify Admin
             await notifyAdmins({
                 title: "Order Out for Delivery",
                 message: `Order #${order.orderId || order._id} is out for delivery.`,
@@ -106,7 +103,6 @@ export const sendDeliveryOTP = async (req, res) => {
 
             return res.json({ message: "OTP sent to customer email", success: true });
         } catch (emailError) {
-            // If email fails, we return an error message so the user knows to check config.
             return res.status(500).json({ 
                 message: "Email failed to send. Please check your EMAIL_USER and EMAIL_PASS configuration.", 
                 error: true
@@ -118,7 +114,6 @@ export const sendDeliveryOTP = async (req, res) => {
     }
 };
 
-// Verify OTP and mark as delivered
 export const verifyDeliveryOTP = async (req, res) => {
     try {
         const { orderId, otp } = req.body;
@@ -131,10 +126,9 @@ export const verifyDeliveryOTP = async (req, res) => {
         }
 
         order.status = "Delivered";
-        order.deliveryOTP = null; // Clear OTP after success
+        order.deliveryOTP = null;
         await order.save();
 
-        // ✅ Notify Admin
         await notifyAdmins({
             title: "Order Delivered!",
             message: `Order #${order.orderId || order._id} has been delivered.`,
@@ -153,7 +147,6 @@ export const updateOrderStatusByDeliveryBoy = async (req, res) => {
     try {
         const { orderId, status } = req.body;
         
-        // Block manual "Delivered" status update if not verified by OTP
         if (status === "Delivered") {
             return res.status(400).json({ 
                 message: "Direct 'Delivered' status update is not allowed. Please use OTP verification.", 
@@ -168,7 +161,6 @@ export const updateOrderStatusByDeliveryBoy = async (req, res) => {
     }
 };
 
-// Admin fetching delivery boys
 export const getDeliveryBoys = async (req, res) => {
     try {
         const deliveryBoys = await UserModel.find({ role: "DELIVERY_BOY" }).select("name email mobile _id");

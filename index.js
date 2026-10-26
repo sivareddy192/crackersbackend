@@ -40,7 +40,7 @@ const allowedOrigins = [
 
 app.use(cors({
     credentials : true,
-    maxAge: 86400, // Cache preflight requests for 24h to avoid OPTIONS waterfalls
+    maxAge: 86400,
     origin : (origin, callback) => {
         if (!origin) return callback(null, true)
         if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
@@ -62,20 +62,23 @@ app.use(helmet({
     crossOriginResourcePolicy : false
 })) 
 
-// Fast DB ensure middleware for cold-starts/serverless lambdas
 app.use(async (req, res, next) => {
     try {
         await connectDB();
+        next();
     } catch (err) {
         console.error("DB connection error in middleware:", err.message);
+        return res.status(503).json({
+            message: "Database connection unavailable. Please try again shortly.",
+            error: true,
+            success: false
+        });
     }
-    next();
 })
 
 const PORT = process.env.PORT || 8080 
 
 app.get("/",(request,response)=>{
-    ///server to client
     response.json({
         message : "Server is running " + PORT
     })

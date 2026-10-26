@@ -15,17 +15,26 @@ async function connectDB() {
     return null;
   }
 
-  // If already connected, return immediately in 0ms
+  // If already connected, return immediately
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
-  if (!cached.promise) {
+  // If connection is in progress, await the existing connection promise
+  if (mongoose.connection.readyState === 2 && cached.promise) {
+    return await cached.promise;
+  }
+
+  // If disconnected or connection was never initiated, reset cache and connect
+  if (mongoose.connection.readyState === 0 || !cached.promise) {
+    cached.promise = null;
+    cached.conn = null;
+
     const opts = {
-      bufferCommands: false,
+      bufferCommands: true,
       maxPoolSize: 10,
       minPoolSize: 2,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 8000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
     };
@@ -38,6 +47,7 @@ async function connectDB() {
       })
       .catch((err) => {
         cached.promise = null;
+        cached.conn = null;
         console.error("MongoDB connection error:", err.message);
         throw err;
       });
@@ -47,6 +57,7 @@ async function connectDB() {
     cached.conn = await cached.promise;
   } catch (error) {
     cached.promise = null;
+    cached.conn = null;
     throw error;
   }
 

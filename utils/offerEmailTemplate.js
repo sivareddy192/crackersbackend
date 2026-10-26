@@ -35,7 +35,7 @@ const offerEmailTemplate = ({
 
           <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
             
-            <!-- Premium Header Banner -->
+            
             <tr>
               <td style="background-color: #ff8c00; background: linear-gradient(135deg, #ff8c00 0%, #e056fd 100%); padding: 50px 30px; text-align: center; color: #ffffff;">
                 <h2 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; opacity: 0.95;">TRACE</h2>
@@ -44,21 +44,21 @@ const offerEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Email Body Content -->
+            
             <tr>
               <td style="padding: 40px 40px 30px 40px;">
                 
-                <!-- Greeting -->
+                
                 <p style="margin: 0 0 15px 0; font-size: 18px; color: #1f2937; font-weight: 600;">
                   Hi ${name},
                 </p>
 
-                <!-- Description Message -->
+                
                 <p style="margin: 0 0 30px 0; font-size: 16px; color: #4b5563; line-height: 1.7;">
                   ${safeDesc}
                 </p>
 
-                <!-- Offer Spotlight Card -->
+                
                 <table width="100%" cellspacing="0" cellpadding="0" style="background: #fffcf5; border: 2px dashed #ff8c00; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 35px;">
                   <tr>
                     <td>
@@ -77,7 +77,7 @@ const offerEmailTemplate = ({
                   </tr>
                 </table>
 
-                <!-- CTA & Validity -->
+                
                 <table width="100%" cellspacing="0" cellpadding="0" style="text-align: center;">
                   <tr>
                     <td>
@@ -94,14 +94,14 @@ const offerEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Separator Divider -->
+            
             <tr>
               <td style="padding: 0 40px;">
                 <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 0;" />
               </td>
             </tr>
 
-            <!-- Footer Social/Info -->
+            
             <tr>
               <td style="padding: 30px 40px 40px 40px; text-align: center;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; color: #9ca3af;">

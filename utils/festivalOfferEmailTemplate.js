@@ -22,10 +22,10 @@ const festivalOfferEmailTemplate = ({
       <tr>
         <td align="center">
 
-          <!-- Main Festive Email Box -->
+          
           <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(180, 83, 9, 0.08); border: 2px solid #fde68a;">
             
-            <!-- Golden/Red Gradient Banner Indicator -->
+            
             <tr>
               <td style="background: linear-gradient(135deg, #ea580c, #d97706); padding: 18px 30px; text-align: center; color: #ffffff;">
                 <div style="font-size: 13px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
@@ -34,7 +34,7 @@ const festivalOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Festive Greeting Content -->
+            
             <tr>
               <td style="padding: 40px 40px 20px 40px; text-align: center;">
                 <h1 style="margin: 0 0 10px 0; font-size: 24px; color: #92400e; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;">
@@ -49,12 +49,12 @@ const festivalOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Highly Visual Campaign Showcase Box -->
+            
             <tr>
               <td style="padding: 0 40px 40px 40px;">
                 <table width="100%" cellspacing="0" cellpadding="0" style="background: #fffaf0; border: 2px dashed #fcd34d; border-radius: 20px; overflow: hidden;">
                   
-                  <!-- Full-width campaign Image with discount Overlay ribbon inside info -->
+                  
                   ${image ? `
                   <tr>
                     <td align="center" style="padding: 0; background-color: #f3f4f6; position: relative;">
@@ -63,7 +63,7 @@ const festivalOfferEmailTemplate = ({
                   </tr>
                   ` : ''}
 
-                  <!-- Offer Details Container -->
+                  
                   <tr>
                     <td style="padding: 30px; text-align: center; background-color: #ffffff;">
                       
@@ -83,7 +83,7 @@ const festivalOfferEmailTemplate = ({
                       </p>
                       ` : ''}
 
-                      <!-- Coupon Code Block (If Present) -->
+                      
                       ${couponCode ? `
                       <div style="display: inline-block; background-color: #fef3c7; border: 2px dashed #f59e0b; border-radius: 12px; padding: 14px 24px; margin-bottom: 25px; text-align: center;">
                          <span style="display: block; font-size: 10px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
@@ -95,7 +95,7 @@ const festivalOfferEmailTemplate = ({
                       </div>
                       ` : ''}
 
-                      <!-- Responsive Action Button -->
+                      
                       <table width="100%" cellspacing="0" cellpadding="0">
                         <tr>
                           <td align="center">
@@ -113,14 +113,14 @@ const festivalOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Thin divider -->
+            
             <tr>
               <td style="padding: 0 40px;">
                 <div style="border-top: 1px solid #fef3c7; height: 1px;"></div>
               </td>
             </tr>
 
-            <!-- Footer and Legal Info -->
+            
             <tr>
               <td style="padding: 35px 40px 40px 40px; text-align: center;">
                 <p style="margin: 0 0 12px 0; font-size: 12px; color: #92400e; font-weight: 600; line-height: 1.6;">

@@ -19,7 +19,6 @@ userRouter.post('/refresh-token',refreshToken)
 userRouter.get('/details',auth,userDetails)
 userRouter.put('/request-delete',auth,requestDeleteController)
 
-// Admin management
 userRouter.get('/all-users', auth, admin, getAllUsers)
 userRouter.put('/update-role', auth, admin, updateUserRole)
 userRouter.put('/admin-update-user', auth, admin, adminUpdateUser)

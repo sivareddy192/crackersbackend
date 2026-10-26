@@ -17,7 +17,6 @@ export async function addReviewController(req, res) {
             });
         }
 
-        // Check if user already reviewed this product
         const existingReview = await ReviewModel.findOne({ productId, userId });
         if (existingReview) {
             return res.status(400).json({

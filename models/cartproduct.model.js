@@ -24,9 +24,7 @@ const cartProductSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Primary lookup index for O(1) cart page load by user
 cartProductSchema.index({ userId: 1, createdAt: -1 });
-// Unique constraint to prevent duplicate cart entries
 cartProductSchema.index({ userId: 1, productId: 1, unit: 1 }, { unique: true });
 
 const CartProductModel = mongoose.model("cartProduct", cartProductSchema);

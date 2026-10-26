@@ -1,14 +1,3 @@
-/*const verifyEmailTemplate = ({name,url})=>{
-    return`
-<p>Dear ${name}</p>    
-<p>Thank you for registering Trace.</p>   
-<a href=${url} style="color:black;background :orange;margin-top : 10px,padding:20px,display:block">
-    Verify Email
-</a>
-`
-}
-
-export default verifyEmailTemplate*/
 
 const verifyEmailTemplate = ({ name, url }) => {
   return `
@@ -22,31 +11,31 @@ const verifyEmailTemplate = ({ name, url }) => {
 
   <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial, Helvetica, sans-serif;">
 
-    <!-- Container -->
+    
     <table width="100%" border="0" cellspacing="0" cellpadding="0" 
       style="padding:40px 0;background:#f5f5f5;">
       <tr>
         <td align="center">
 
-          <!-- Card -->
+          
           <table width="600" cellspacing="0" cellpadding="0" 
             style="background:#ffffff;border-radius:12px;padding:30px;box-shadow:0 5px 18px rgba(0,0,0,0.06);">
 
-            <!-- Logo -->
+            
             <tr>
               <td align="center" style="padding-bottom:20px;">
                 <h2 style="margin:0;font-size:26px;color:#ff8c00;font-weight:800;">TRACE</h2>
               </td>
             </tr>
 
-            <!-- Greeting -->
+            
             <tr>
               <td style="font-size:16px;color:#333;padding-bottom:10px;">
                 Hi <strong>${name}</strong>,
               </td>
             </tr>
 
-            <!-- Message -->
+            
             <tr>
               <td style="font-size:15px;color:#555;line-height:1.6;padding-bottom:20px;">
                 Thank you for creating an account on <strong>Trace Grocery</strong>.
@@ -54,7 +43,7 @@ const verifyEmailTemplate = ({ name, url }) => {
               </td>
             </tr>
 
-            <!-- Verify Button -->
+            
             <tr>
               <td align="center" style="padding: 20px 0;">
                 <a href="${url}" target="_blank"
@@ -75,7 +64,7 @@ const verifyEmailTemplate = ({ name, url }) => {
 
             
 
-            <!-- Footer -->
+            
             <tr>
               <td style="padding-top:30px;font-size:12px;color:#888;text-align:center;">
                 © ${new Date().getFullYear()} Trace Grocery. All Rights Reserved.

@@ -16,12 +16,10 @@ import { admin } from '../middleware/Admin.js'
 
 const productRouter = Router()
 
-// High-speed Unified Home Feed API (~0.003ms response)
 productRouter.get('/home-feed', getHomeFeedController)
 
 productRouter.post("/create",auth,admin,createProductController)
 
-// Support both GET and POST for maximum performance & HTTP cache compatibility
 productRouter.get('/get', getProductController)
 productRouter.post('/get', getProductController)
 

@@ -20,12 +20,10 @@ export async function CashOnDeliveryOrderController(req, res) {
         const userId = req.userId
         const { list_items, totalAmt, addressId, subTotalAmt, discountAmt, couponCode, deliveryCharge, handlingCharge } = req.body
 
-        // 🔥 CRITICAL FIX: Manually tell MongoDB to drop the unique constraint if it exists
         try {
             await OrderModel.collection.dropIndex("orderId_1")
             console.log("Successfully dropped duplicate orderId index")
         } catch (e) {
-            // Index might already be gone, which is fine
         }
 
         if (!list_items || list_items.length === 0) {
@@ -47,7 +45,7 @@ export async function CashOnDeliveryOrderController(req, res) {
         const commonOrderId = `ORD-${new mongoose.Types.ObjectId().toString().slice(-6).toUpperCase()}`
 
         const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 3); // 3 days from now
+        deliveryDate.setDate(deliveryDate.getDate() + 3);
 
         const payload = list_items.filter(el => el.productId).map(el => {
             const product = el.productId?._id ? el.productId : el.productId; 
@@ -66,8 +64,8 @@ export async function CashOnDeliveryOrderController(req, res) {
                 paymentId: "",
                 payment_status: "CASH ON DELIVERY",
                 delivery_address: addressId,
-                subTotalAmt: individualItemPrice, // Individual price
-                totalAmt: totalAmt,               // Keep totalAmt for overall order reference
+                subTotalAmt: individualItemPrice,
+                totalAmt: totalAmt,
                 discountAmt: discountAmt || 0,
                 couponCode: couponCode || "",
                 deliveryCharge: deliveryCharge || 0,
@@ -78,7 +76,6 @@ export async function CashOnDeliveryOrderController(req, res) {
 
         const generatedOrder = await OrderModel.insertMany(payload)
 
-        // Fetch user and address for email receipt
         const user = await UserModel.findById(userId);
         const userEmail = user?.email || req.body.guestEmail;
         const userName = user?.name || "Customer";
@@ -112,20 +109,17 @@ export async function CashOnDeliveryOrderController(req, res) {
         });
 
 
-        // 🚀 STEP 1: Parallelize Inventory Stock Deductions
         const stockUpdates = list_items.map(async (item) => {
             const pId = item.productId._id || item.productId;
             const quantity = item.quantity || 1;
             
             const updateOps = [];
             
-            // Main product stock update
             updateOps.push(ProductModel.updateOne(
                 { _id: pId },
                 { $inc: { stock: -quantity } }
             ));
 
-            // Variant stock update if exists
             if (item.unit) {
                 updateOps.push(ProductModel.updateOne(
                     { _id: pId, "variants.unit": item.unit },
@@ -135,7 +129,6 @@ export async function CashOnDeliveryOrderController(req, res) {
 
             await Promise.all(updateOps);
 
-            // Quick follow up check (runs in back if needed, but keep safe)
             ProductModel.findById(pId).select('name stock').lean().then(prod => {
                 if (prod && prod.stock <= 5) {
                     notifyAdmins({
@@ -149,10 +142,8 @@ export async function CashOnDeliveryOrderController(req, res) {
             }).catch(e => {});
         });
 
-        // Execute all stock updates at once
         await Promise.all(stockUpdates);
 
-        // 🚀 STEP 2: Parallelize Core Cleanup 
         const cleanupTasks = [
             CartProductModel.deleteMany({ userId: userId }),
             UserModel.updateOne({ _id: userId }, { shopping_cart: [] })
@@ -165,7 +156,6 @@ export async function CashOnDeliveryOrderController(req, res) {
 
         await Promise.all(cleanupTasks);
 
-        // 🚀 STEP 3: Fire-off ALL side-effects (Email & Notifications) in Parallel
         const broadcastTasks = [];
 
         if (userEmail) {
@@ -205,7 +195,6 @@ export async function CashOnDeliveryOrderController(req, res) {
             }).catch(err => console.error("[Broadcast Fail] Delivery Notify:", err.message))
         );
 
-        // Wait for all network operations collectively (reduces total wait to the slowest single operation)
         await Promise.allSettled(broadcastTasks);
 
         return res.json({
@@ -254,7 +243,6 @@ export async function paymentController(request, response) {
         });
 
 
-        // Add Delivery Charge if any
         if (deliveryCharge > 0) {
             line_items.push({
                 price_data: {
@@ -268,7 +256,6 @@ export async function paymentController(request, response) {
             });
         }
 
-        // Add Handling Charge if any
         if (handlingCharge > 0) {
             line_items.push({
                 price_data: {
@@ -302,7 +289,6 @@ export async function paymentController(request, response) {
             cancel_url: `${process.env.FRONTEND_URL}/cancel`
         };
 
-        // 🔥 FIX: Handle Discount using Stripe Coupons (Negative line items are not allowed)
         if (couponDiscount > 0) {
             const coupon = await stripe.coupons.create({
                 amount_off: Math.round(couponDiscount * 100),
@@ -329,7 +315,6 @@ export async function paymentController(request, response) {
     }
 }
 
-// Helper to create order and clear cart
 async function createOrderHelper(session, lineItems) {
     const userId = session.metadata.userId;
     const addressId = session.metadata.addressId;
@@ -342,7 +327,6 @@ async function createOrderHelper(session, lineItems) {
     const deliveryCharge = session.metadata.deliveryCharge;
     const handlingCharge = session.metadata.handlingCharge;
 
-    // Check if order already exists for this payment/session to avoid duplicates
     const existingOrder = await OrderModel.findOne({ paymentId: paymentId });
     if (existingOrder) return;
 
@@ -350,7 +334,7 @@ async function createOrderHelper(session, lineItems) {
     const commonOrderId = `ORD-${new mongoose.Types.ObjectId().toString().slice(-6).toUpperCase()}`;
 
     const deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 3); // 3 days from now
+    deliveryDate.setDate(deliveryDate.getDate() + 3);
 
     for (const item of lineItems.data) {
         let productId = "";
@@ -358,7 +342,6 @@ async function createOrderHelper(session, lineItems) {
         let productImages = [];
         let unit = "";
 
-        // Try to get productId and unit from product metadata
         try {
             const product = await stripe.products.retrieve(item.price.product);
             productId = product.metadata.productId;
@@ -368,7 +351,6 @@ async function createOrderHelper(session, lineItems) {
             console.log("Could not retrieve Stripe product metadata:", e.message);
         }
 
-        // 🔥 CRITICAL FIX: Only save if it's a real product (skip charges)
         if (!productId) {
             console.log(`Skipping non-product item: ${productName}`);
             continue; 
@@ -382,7 +364,7 @@ async function createOrderHelper(session, lineItems) {
                 name: productName,
                 image: productImages,
                 quantity: item.quantity,
-                unit: unit // Store the specific variant unit
+                unit: unit
             },
             paymentId: paymentId,
             payment_status: "PAID",
@@ -400,7 +382,6 @@ async function createOrderHelper(session, lineItems) {
     if (orderProducts.length > 0) {
         await OrderModel.insertMany(orderProducts);
 
-        // Fetch user and address for email receipt
         try {
             const user = await UserModel.findById(userId);
             const userEmail = user?.email;
@@ -450,20 +431,17 @@ async function createOrderHelper(session, lineItems) {
             console.error("[Stripe Order Email] Failed to send email receipt:", emailErr.message);
         }
 
-        // ✅ STEP 1: Parallelize Update Product Stocks (Main & Variant)
         const stockUpdates = orderProducts.map(async (item) => {
             if (!item.productId) return;
             
             const quantity = item.product_details.quantity || 1;
             const updateOps = [];
             
-            // 1. Update Main Stock
             updateOps.push(ProductModel.updateOne(
                 { _id: item.productId },
                 { $inc: { stock: -quantity } }
             ));
 
-            // 2. Update Variant Stock
             if (item.product_details.unit) {
                 updateOps.push(ProductModel.updateOne(
                     { _id: item.productId, "variants.unit": item.product_details.unit },
@@ -473,7 +451,6 @@ async function createOrderHelper(session, lineItems) {
 
             await Promise.all(updateOps);
 
-            // Check Low Stock in parallel non-blocking
             ProductModel.findById(item.productId).select('name stock').lean().then(prod => {
                 if (prod && prod.stock <= 5) {
                     notifyAdmins({
@@ -489,7 +466,6 @@ async function createOrderHelper(session, lineItems) {
 
         await Promise.all(stockUpdates);
 
-        // ✅ STEP 2: Parallelize Cleanup and Coupon Usage
         const cleanupTasks = [
             CartProductModel.deleteMany({ userId: userId }),
             UserModel.updateOne({ _id: userId }, { shopping_cart: [] })
@@ -646,7 +622,6 @@ export async function cancelOrderController(req, res){
             })
         }
 
-        // ✅ Only Pending orders can be cancelled
         if(initialOrder.status !== "Pending"){
             return res.status(400).json({
                 message: "Order cannot be cancelled",
@@ -655,7 +630,6 @@ export async function cancelOrderController(req, res){
             })
         }
 
-        // ✅ Update ALL items with the same orderId
         const updatedOrders = await OrderModel.updateMany(
             { orderId: initialOrder.orderId, userId: userId },
             { $set: { status: "Cancelled" } }
@@ -679,7 +653,6 @@ export async function cancelOrderController(req, res){
     }
 }
 
-// ✅ Get All Orders (Admin)
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await OrderModel.find()
@@ -706,7 +679,6 @@ export const getAllOrders = async (req, res) => {
 }
 
 
-// ✅ Update Order Status (Admin)
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params
@@ -721,7 +693,6 @@ export const updateOrderStatus = async (req, res) => {
       })
     }
 
-    // ✅ Update ALL items with the same orderId to keep them in sync
     const updatedOrder = await OrderModel.updateMany(
       { orderId: initialOrder.orderId },
       { status },
@@ -759,7 +730,6 @@ export const reorderController = async (req, res) => {
 
     let orders = [];
     
-    // ✅ FIX: Fetch ALL matching order documents to properly support multi-product orders
     if (mongoose.Types.ObjectId.isValid(orderId)) {
       orders = await OrderModel.find({
         $or: [{ _id: orderId }, { orderId }],
@@ -774,13 +744,11 @@ export const reorderController = async (req, res) => {
       });
     }
 
-    // ✅ EXTRACT ALL PRODUCTS AND QUANTITIES
     const items = orders.map(o => ({
       productId: o.productId || o.product_details?._id,
       quantity: o.product_details?.quantity || o.quantity || 1
     })).filter(item => item.productId);
 
-    // ✅ ADD TO CART
     for (let item of items) {
       if (!item?.productId) continue;
 
@@ -802,7 +770,6 @@ export const reorderController = async (req, res) => {
         });
       }
 
-      // ✅ CRITICAL SYNC: Add product into user model array to preserve full DB parity
       if (cartItemDoc) {
         await UserModel.updateOne(
           { _id: userId, shopping_cart: { $ne: cartItemDoc._id } }, 
@@ -880,11 +847,10 @@ export async function assignOrderController(req, res) {
     }
 }
 
-// ✅ Delivery Boy Scan & Assign
 export const scanAndAssignOrderController = async (req, res) => {
     try {
         const { orderId } = req.body;
-        const deliveryBoyId = req.userId; // From auth middleware
+        const deliveryBoyId = req.userId;
 
         if (!orderId) {
             return res.status(400).json({
@@ -893,7 +859,6 @@ export const scanAndAssignOrderController = async (req, res) => {
             });
         }
 
-        // Check if order exists and isn't already assigned/delivered
         const order = await OrderModel.findOne({ orderId: orderId });
 
         if (!order) {
@@ -904,7 +869,6 @@ export const scanAndAssignOrderController = async (req, res) => {
         }
 
         if (order.deliveryBoyId) {
-            // If it's already assigned to the CURRENT person scanning, it's NOT an error
             if (order.deliveryBoyId.toString() === deliveryBoyId.toString()) {
                 return res.status(200).json({
                     message: "Order already assigned to you!",
@@ -925,7 +889,6 @@ export const scanAndAssignOrderController = async (req, res) => {
             });
         }
 
-        // Update all items with this orderId
         await OrderModel.updateMany(
             { orderId: orderId },
             { 
@@ -934,7 +897,6 @@ export const scanAndAssignOrderController = async (req, res) => {
             }
         );
 
-        // ✅ Notify Admin
         const dboy = await UserModel.findById(deliveryBoyId);
         await notifyAdmins({
             title: "Order Picked Up",
@@ -957,7 +919,6 @@ export const scanAndAssignOrderController = async (req, res) => {
     }
 };
 
-// ✅ Admin Stats: Total Sales, Today's Sales, Revenue
 export const getAdminStats = async (req, res) => {
     try {
         const now = new Date();
@@ -966,46 +927,37 @@ export const getAdminStats = async (req, res) => {
 
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        // Total orders (excluding Cancelled)
         const totalOrders = await OrderModel.countDocuments({ status: { $ne: "Cancelled" } });
 
-        // Today's orders
         const todayOrders = await OrderModel.countDocuments({
             createdAt: { $gte: startOfToday, $lte: endOfToday },
             status: { $ne: "Cancelled" }
         });
 
-        // Total revenue
         const revenueAgg = await OrderModel.aggregate([
             { $match: { status: { $ne: "Cancelled" } } },
             { $group: { _id: null, total: { $sum: "$subTotalAmt" } } }
         ]);
         const totalRevenue = revenueAgg[0]?.total || 0;
 
-        // Today's revenue
         const todayRevenueAgg = await OrderModel.aggregate([
             { $match: { status: { $ne: "Cancelled" }, createdAt: { $gte: startOfToday, $lte: endOfToday } } },
             { $group: { _id: null, total: { $sum: "$subTotalAmt" } } }
         ]);
         const todayRevenue = todayRevenueAgg[0]?.total || 0;
 
-        // This month revenue
         const monthRevenueAgg = await OrderModel.aggregate([
             { $match: { status: { $ne: "Cancelled" }, createdAt: { $gte: startOfMonth } } },
             { $group: { _id: null, total: { $sum: "$subTotalAmt" } } }
         ]);
         const monthRevenue = monthRevenueAgg[0]?.total || 0;
 
-        // Delivered count
         const deliveredCount = await OrderModel.countDocuments({ status: "Delivered" });
 
-        // Pending count
         const pendingCount = await OrderModel.countDocuments({ status: { $in: ["Pending", "Confirmed", "Shipped", "Out for Delivery"] } });
 
-        // Cancelled count
         const cancelledCount = await OrderModel.countDocuments({ status: "Cancelled" });
 
-        // Top 5 sold products
         const topProducts = await OrderModel.aggregate([
             { $match: { status: { $ne: "Cancelled" } } },
             {
@@ -1021,7 +973,6 @@ export const getAdminStats = async (req, res) => {
             { $limit: 5 }
         ]);
 
-        // Recent 7 days daily revenue
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
         sevenDaysAgo.setHours(0, 0, 0, 0);

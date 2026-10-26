@@ -1,4 +1,3 @@
-// models/deliveryBoy.model.js
 import mongoose from "mongoose";
 
 const deliveryBoySchema = new mongoose.Schema({

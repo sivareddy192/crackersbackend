@@ -69,7 +69,6 @@ export const getCartItemController = async(request,response)=>{
     try {
         const userId = request.userId
 
-        // Add select on productId to only fetch required fields for faster populate
         const cartItem = await CartProductModel.find({
             userId : userId
         })

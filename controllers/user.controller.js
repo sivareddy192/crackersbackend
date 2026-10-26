@@ -12,7 +12,6 @@ import Coupon from '../models/coupon.model.js'
 import welcomeOfferTemplate from '../utils/welcomeOfferTemplate.js'
 import ProductModel from '../models/product.model.js'
 
-//User registeration
 export async function registerUserController(request,response){
     try {
         const { name, email, password } = request.body
@@ -25,7 +24,6 @@ export async function registerUserController(request,response){
             })
         }
 
-        // Gmail Validator
         const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
         if (!gmailRegex.test(email)) {
             return response.status(400).json({
@@ -71,7 +69,6 @@ export async function registerUserController(request,response){
             })
         } catch (emailError) {
             console.error("Registration Email Error:", emailError)
-            // Still return success since user was saved, but with a warning
             return response.json({
                 message : "User registered successfully, but verification email failed to send.",
                 error : false,
@@ -119,8 +116,6 @@ export async function verifyEmailController(request, response) {
             })
         }
 
-        // Guard: if this user was already verified, don't re-run onboarding
-        // (prevents repeated welcome-email spam on repeated calls with the same code)
         const alreadyVerified = user.verify_email === true;
 
         const updateUser = await UserModel.findByIdAndUpdate(
@@ -137,36 +132,31 @@ export async function verifyEmailController(request, response) {
             })
         }
 
-        // BACKGROUND ONBOARDING: Dispatch Welcome Offer Email only on first verification
         if (!alreadyVerified) {
             (async () => {
                 try {
                     console.log(`[Onboarding Workflow Initiated] Looking up Welcome Offer for verified user: ${user.email}`);
 
-                    // 1. Look for the most recent active coupon targeting first-time buyers
                     let welcomeCoupon = await Coupon.findOne({
                         isFirstOrderOnly: true,
                         isActive: true
                     }).sort({ createdAt: -1 });
 
-                    // 2. Automatic Auto-Seeding if no onboarding coupon is configured yet
                     if (!welcomeCoupon) {
                         console.log("[Onboarding Workflow] No active First-Order coupon found. Auto-seeding 'WELCOME50'...");
 
                         const existingCode = await Coupon.findOne({ code: 'WELCOME50' });
                         if (existingCode) {
-                            // Re-activate it if it got disabled
                             existingCode.isActive = true;
                             await existingCode.save();
                             welcomeCoupon = existingCode;
                         } else {
-                            // Create brand new starter coupon
                             welcomeCoupon = new Coupon({
                                 code: 'WELCOME50',
                                 discountPercent: 50,
                                 minAmount: 200,
                                 maxDiscount: 100,
-                                expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year expiration
+                                expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
                                 startDate: new Date(),
                                 isFirstOrderOnly: true,
                                 usageLimitPerUser: 1,
@@ -176,7 +166,6 @@ export async function verifyEmailController(request, response) {
                         }
                     }
 
-                    // Fetch top 3 deepest hot deals for dynamic placement
                     let hotDeals = [];
                     try {
                         hotDeals = await ProductModel.find({
@@ -190,7 +179,6 @@ export async function verifyEmailController(request, response) {
                         console.error("[Onboarding Workflow Warning] Failed to populate hot deals for onboarding:", dealErr.message);
                     }
 
-                    // 3. Construct Front-end Context and Render Template
                     const shopUrl = process.env.FRONTEND_URL || "https://tracly.store";
 
                     console.log(`[Onboarding Workflow] Dispatching Email via Resend to: ${user.email} with Coupon: ${welcomeCoupon.code}`);
@@ -234,7 +222,6 @@ export async function verifyEmailController(request, response) {
     }
 }
 
-//login controller
 export async function loginController(request,response){
     try {
         const { email , password } = request.body
@@ -320,10 +307,9 @@ export async function loginController(request,response){
     }
 }
 
-//logout controller
 export async function logoutController(request,response){
     try {
-        const userid = request.userId //middleware
+        const userid = request.userId
 
         const cookiesOption = {
             httpOnly : true,
@@ -354,11 +340,10 @@ export async function logoutController(request,response){
 }
 
 
-//upload user avatar
 export async  function uploadAvatar(req,res){
     try {
-        const userId = req.userId // auth middlware
-        const image = req.file  // multer middleware
+        const userId = req.userId
+        const image = req.file
 
         if (!image) {
             return res.status(400).json({
@@ -396,7 +381,6 @@ export async  function uploadAvatar(req,res){
     }
 }
 
-//update user details
 export async function updateUserDetails(req,res) {
     try{
         const userId =req.userId
@@ -430,7 +414,6 @@ export async function updateUserDetails(req,res) {
     }
 }
 
-//forgot password
 export async function forgotPasswordController(req,res) {
     try {
         const { email } = req.body 
@@ -446,7 +429,7 @@ export async function forgotPasswordController(req,res) {
         }
 
         const otp = generateOtp()
-        const expireTime = new Date() + 5 * 60 * 1000 // 5min
+        const expireTime = new Date() + 5 * 60 * 1000
 
         const update = await UserModel.findByIdAndUpdate(user._id,{
             forgot_password_otp : otp,
@@ -477,7 +460,6 @@ export async function forgotPasswordController(req,res) {
     }
 }
 
-//verify forgot password otp
 export async function verifyForgotPasswordOtp(req,res){
     try {
         const { email , otp }  = req.body
@@ -537,7 +519,6 @@ export async function verifyForgotPasswordOtp(req,res){
     }
 }
 
-//reset the password
 export async function resetpassword(req,res){
     try {
         const { email , newPassword, confirmPassword } = req.body 
@@ -588,7 +569,6 @@ export async function resetpassword(req,res){
     }
 }
 
-//refresh token controler
 export async function refreshToken(req,res){
     try {
         const refreshToken = req.cookies.refreshToken || req?.headers?.authorization?.split(" ")[1]
@@ -617,7 +597,6 @@ export async function refreshToken(req,res){
         const user = await UserModel.findById(userId)
 
         if(!user || user.refresh_token !== refreshToken || user.status !== "Active"){
-            // Clear refresh token if account is not active
             if (user && user.status !== "Active") {
                 await UserModel.findByIdAndUpdate(userId, { refresh_token: "" })
             }
@@ -660,7 +639,6 @@ export async function refreshToken(req,res){
 
 }
 
-//get login user details
 export async function userDetails(request,response){
     try {
         const userId  = request.userId
@@ -684,7 +662,6 @@ export async function userDetails(request,response){
     }
 }
 
-// get all users (Admin only)
 export async function getAllUsers(req, res) {
     try {
         const users = await UserModel.find().select('-password -refresh_token').sort({ createdAt: -1 })
@@ -704,7 +681,6 @@ export async function getAllUsers(req, res) {
     }
 }
 
-// update user role (Admin only)
 export async function updateUserRole(req, res) {
     try {
         const { userId, role } = req.body
@@ -734,7 +710,6 @@ export async function updateUserRole(req, res) {
     }
 }
 
-// update any user details (Admin only)
 export async function adminUpdateUser(req, res) {
     try {
         const { userId, name, email, mobile, role, status } = req.body
@@ -753,7 +728,6 @@ export async function adminUpdateUser(req, res) {
             ...(mobile && { mobile }),
             ...(role && { role }),
             ...(status && { status }),
-            // Clear refresh token if status is not Active
             ...(status && status !== "Active" && { refresh_token: "" })
         }, { new: true })
 
@@ -772,7 +746,6 @@ export async function adminUpdateUser(req, res) {
     }
 }
 
-// delete user (Admin only)
 export async function deleteUserController(req, res) {
     try {
         const { userId } = req.body

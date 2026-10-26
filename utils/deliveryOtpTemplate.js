@@ -12,14 +12,14 @@ const deliveryOtpTemplate = ({ name, otp, orderId }) => {
             <tr>
                 <td align="center">
                     <table width="100%" maxWidth="600" border="0" cellspacing="0" cellpadding="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);max-width:600px;">
-                        <!-- Header -->
+                        
                         <tr>
                             <td style="background-color:#16a34a;padding:30px;text-align:center;">
                                 <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;text-transform:uppercase;">Trace Delivery</h1>
                             </td>
                         </tr>
                         
-                        <!-- Content -->
+                        
                         <tr>
                             <td style="padding:40px 30px;">
                                 <h2 style="color:#111827;margin:0 0 16px 0;font-size:20px;font-weight:700;">Hello ${name || 'Customer'},</h2>
@@ -34,7 +34,7 @@ const deliveryOtpTemplate = ({ name, otp, orderId }) => {
                             </td>
                         </tr>
                         
-                        <!-- Footer -->
+                        
                         <tr>
                             <td style="background-color:#f9fafb;padding:20px 30px;text-align:center;border-top:1px solid #f3f4f6;">
                                 <p style="color:#9ca3af;margin:0;font-size:12px;">© ${new Date().getFullYear()} Trace Grocery. All rights Reserved.</p>

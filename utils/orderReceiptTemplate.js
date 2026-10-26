@@ -35,7 +35,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7fafc; margin: 0; padding: 40px 0;">
         <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
-            <!-- Header -->
+            
             <tr>
                 <td style="background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); padding: 40px; text-align: center;">
                     <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">TRACE</h1>
@@ -43,13 +43,13 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                 </td>
             </tr>
             
-            <!-- Body -->
+            
             <tr>
                 <td style="padding: 40px;">
                     <p style="font-size: 16px; color: #4a5568; margin-top: 0; font-weight: 500;">Hello <strong>${name || 'Customer'}</strong>,</p>
                     <p style="font-size: 15px; color: #718096; line-height: 1.6; margin-bottom: 30px;">Thank you for your order! We are excited to let you know that your order has been received and is being prepared for shipment.</p>
                     
-                    <!-- Order Details Card -->
+                    
                     <table width="100%" cellpadding="16" cellspacing="0" style="background-color: #f8fafc; border-radius: 16px; border: 1px solid #edf2f7; margin-bottom: 30px;">
                         <tr>
                             <td>
@@ -67,7 +67,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                         </tr>
                     </table>
 
-                    <!-- Track Order CTA -->
+                    
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="${frontendUrl}/dashboard/order-details/${orderId}" 
                            style="display: inline-block; background-color: #1a202c; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 32px; border-radius: 12px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(26, 32, 44, 0.15);">
@@ -75,7 +75,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                         </a>
                     </div>
 
-                    <!-- Itemized Summary -->
+                    
                     <h3 style="font-size: 12px; color: #a0aec0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; margin-bottom: 12px;">Order Summary</h3>
                     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
                         <thead>
@@ -87,7 +87,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                         </thead>
                         <tbody>
                             ${itemsHtml}
-                            <!-- Total Row -->
+                            
                             <tr>
                                 <td colspan="2" style="padding: 20px 0 0 0; font-size: 16px; font-weight: 800; color: #1a202c;">Grand Total</td>
                                 <td align="right" style="padding: 20px 0 0 0; font-size: 20px; font-weight: 900; color: #1a202c; border-top: 2px dashed #edf2f7;">₹${totalAmt}</td>
@@ -95,7 +95,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                         </tbody>
                     </table>
 
-                    <!-- Delivery Address Card -->
+                    
                     <h3 style="font-size: 12px; color: #a0aec0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; margin-bottom: 12px;">Delivery Address</h3>
                     <p style="font-size: 14px; color: #4a5568; line-height: 1.6; background-color: #f8fafc; padding: 16px; border-radius: 16px; border: 1px solid #edf2f7; margin-top: 0;">
                         ${address}
@@ -103,7 +103,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                 </td>
             </tr>
             
-            <!-- Footer -->
+            
             <tr>
                 <td style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #edf2f7;">
                     <p style="font-size: 12px; color: #a0aec0; margin: 0; line-height: 1.5;">If you have any questions, please contact our support team at sivareddy03457@gmail.com.</p>

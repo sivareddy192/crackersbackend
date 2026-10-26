@@ -8,7 +8,6 @@ const productOfferEmailTemplate = ({
   unit,
   productUrl
 }) => {
-  // Safely calculate discount percent if not fully determined
   const calculatedDiscount = discountPercent > 0 
     ? discountPercent 
     : (mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0);
@@ -28,10 +27,10 @@ const productOfferEmailTemplate = ({
       <tr>
         <td align="center">
 
-          <!-- Main Email Box -->
+          
           <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
             
-            <!-- Banner Indicator -->
+            
             <tr>
               <td style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 15px 30px; text-align: center; color: #ffffff;">
                 <div style="font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -40,7 +39,7 @@ const productOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Greeting Content -->
+            
             <tr>
               <td style="padding: 40px 40px 20px 40px;">
                 <p style="margin: 0 0 12px 0; font-size: 18px; color: #0f172a; font-weight: 700; letter-spacing: -0.2px;">
@@ -52,12 +51,12 @@ const productOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Highly Visual Product Showcase Box -->
+            
             <tr>
               <td style="padding: 0 40px 40px 40px;">
                 <table width="100%" cellspacing="0" cellpadding="0" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
                   
-                  <!-- Showcase Image and Badge -->
+                  
                   <tr>
                     <td align="center" style="padding: 40px 20px; position: relative; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;">
                       ${calculatedDiscount > 0 ? `
@@ -72,7 +71,7 @@ const productOfferEmailTemplate = ({
                     </td>
                   </tr>
 
-                  <!-- Product Info Details -->
+                  
                   <tr>
                     <td style="padding: 30px; text-align: center;">
                       <h3 style="margin: 0 0 6px 0; font-size: 20px; color: #0f172a; font-weight: 800; letter-spacing: -0.3px; text-transform: uppercase;">
@@ -82,7 +81,7 @@ const productOfferEmailTemplate = ({
                         Unit Size: ${unit || '1 Piece'}
                       </span>
 
-                      <!-- Interactive Price Blocks -->
+                      
                       <table cellspacing="0" cellpadding="0" style="margin: 0 auto 25px auto;">
                         <tr>
                           <td style="font-size: 32px; font-weight: 900; color: #0f172a; padding-right: 10px;">
@@ -96,7 +95,7 @@ const productOfferEmailTemplate = ({
                         </tr>
                       </table>
 
-                      <!-- Action Call to Button -->
+                      
                       <table width="100%" cellspacing="0" cellpadding="0">
                         <tr>
                           <td align="center">
@@ -114,14 +113,14 @@ const productOfferEmailTemplate = ({
               </td>
             </tr>
 
-            <!-- Thin Divider -->
+            
             <tr>
               <td style="padding: 0 40px;">
                 <div style="border-top: 1px solid #f1f5f9; height: 1px;"></div>
               </td>
             </tr>
 
-            <!-- Footer and Social Elements -->
+            
             <tr>
               <td style="padding: 30px 40px 40px 40px; text-align: center;">
                 <p style="margin: 0 0 12px 0; font-size: 13px; color: #64748b; line-height: 1.5;">

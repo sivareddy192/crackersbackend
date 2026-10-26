@@ -21,7 +21,6 @@ const subCategorySchema =new mongoose.Schema({
     timestamps:true
 })
 
-// Speed up sub-category by category group queries
 subCategorySchema.index({ category: 1, createdAt: -1 });
 subCategorySchema.index({ category: 1 });
 subCategorySchema.index({ createdAt: -1 });

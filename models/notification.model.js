@@ -23,7 +23,7 @@ const notificationSchema = new mongoose.Schema({
         default: 'info'
     },
     event: {
-        type: String, // 'NEW_ORDER', 'LOW_STOCK', 'ORDER_PICKED', 'ORDER_DELIVERED', etc.
+        type: String,
     },
     read: {
         type: Boolean,
@@ -38,7 +38,6 @@ const notificationSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Auto-delete after 24 hours using TTL index
 notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 const NotificationModel = mongoose.model('Notification', notificationSchema);

@@ -9,8 +9,6 @@ export const getNotifications = async (req, res) => {
 
         let query = { userId };
         
-        // If admin, they can see their own + any notification marked for ADMIN role generally
-        // or we can allow them to see specific categories.
         if (user.role === 'ADMIN' && role === 'ALL') {
             query = { role: { $in: ['ADMIN', 'DELIVERY_BOY'] } };
         } else if (role) {
@@ -91,7 +89,6 @@ export const deleteNotification = async (req, res) => {
     }
 };
 
-// Utility function to create notifications (internal use)
 export const createNotification = async ({ userId, title, message, details, type, event, role }) => {
     try {
         const newNotification = new NotificationModel({
@@ -110,7 +107,6 @@ export const createNotification = async ({ userId, title, message, details, type
     }
 };
 
-// Notify all Admins
 export const notifyAdmins = async (data) => {
     const admins = await UserModel.find({ role: 'ADMIN' });
     for (const admin of admins) {
@@ -118,7 +114,6 @@ export const notifyAdmins = async (data) => {
     }
 };
 
-// Notify all Delivery Boys
 export const notifyDeliveryBoys = async (data) => {
     const boys = await UserModel.find({ role: 'DELIVERY_BOY' });
     for (const boy of boys) {
