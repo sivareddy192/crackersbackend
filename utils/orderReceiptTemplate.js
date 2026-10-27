@@ -89,11 +89,23 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
                             ${itemsHtml}
                             
                             <tr>
-                                <td colspan="2" style="padding: 20px 0 0 0; font-size: 16px; font-weight: 800; color: #1a202c;">Grand Total</td>
-                                <td align="right" style="padding: 20px 0 0 0; font-size: 20px; font-weight: 900; color: #1a202c; border-top: 2px dashed #edf2f7;">₹${totalAmt}</td>
+                                <td colspan="2" style="padding: 12px 0 0 0; font-size: 14px; font-weight: 600; color: #4a5568;">Delivery Charges (Pay After Delivery)</td>
+                                <td align="right" style="padding: 12px 0 0 0; font-size: 14px; font-weight: 700; color: #dd6b20;">₹500 - ₹1,000*</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 16px 0 0 0; font-size: 16px; font-weight: 800; color: #1a202c;">Grand Total (Order Amount)</td>
+                                <td align="right" style="padding: 16px 0 0 0; font-size: 20px; font-weight: 900; color: #1a202c; border-top: 2px dashed #edf2f7;">₹${totalAmt}</td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <div style="background-color: #fffaf0; border: 1px solid #feebc8; border-left: 4px solid #dd6b20; border-radius: 12px; padding: 18px; margin: 24px 0;">
+                        <h4 style="margin: 0 0 6px 0; color: #c05621; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">🚚 Delivery Charges Information</h4>
+                        <p style="margin: 0; color: #7b341e; font-size: 13px; line-height: 1.6;">
+                            <strong>Delivery Charge: ₹500 - ₹1,000 (Pay After Delivery)</strong><br />
+                            *Please note: Delivery charges are payable upon delivery. We will calculate the exact delivery price based on your location and send the exact price directly to your Gmail shortly.
+                        </p>
+                    </div>
 
                     
                     <h3 style="font-size: 12px; color: #a0aec0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; margin-bottom: 12px;">Delivery Address</h3>

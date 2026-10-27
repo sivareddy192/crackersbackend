@@ -42,6 +42,15 @@ export async function CashOnDeliveryOrderController(req, res) {
             })
         }
 
+        const MINIMUM_ORDER_AMOUNT = 4500;
+        if (Number(subTotalAmt || 0) < MINIMUM_ORDER_AMOUNT) {
+            return res.status(400).json({
+                message: `Minimum order amount is ₹${MINIMUM_ORDER_AMOUNT}. Please add more items to place your order.`,
+                error: true,
+                success: false
+            })
+        }
+
         const commonOrderId = `ORD-${new mongoose.Types.ObjectId().toString().slice(-6).toUpperCase()}`
 
         const deliveryDate = new Date();
@@ -220,6 +229,15 @@ export async function paymentController(request, response) {
         const { list_items, addressId, subTotalAmt, totalAmt, deliveryCharge, handlingCharge, couponDiscount, couponId } = request.body;
 
         const user = await UserModel.findById(userId);
+
+        const MINIMUM_ORDER_AMOUNT = 4500;
+        if (Number(subTotalAmt || 0) < MINIMUM_ORDER_AMOUNT) {
+            return response.status(400).json({
+                message: `Minimum order amount is ₹${MINIMUM_ORDER_AMOUNT}. Please add more items to place your order.`,
+                error: true,
+                success: false
+            });
+        }
 
         const line_items = list_items.filter(item => item.productId).map(item => {
             const product = item.productId;
@@ -570,11 +588,49 @@ export async function getOrderDetailsController(request,response){
 export async function getOrderByOrderIdController(req, res) {
     try {
         const { orderId } = req.params;
-        const orders = await OrderModel.find({ orderId })
+        if (!orderId) {
+            return res.status(400).json({
+                message: "Order ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const trimmedId = orderId.trim();
+        let orders = [];
+
+        // Check if trimmedId is a valid ObjectId
+        if (mongoose.Types.ObjectId.isValid(trimmedId)) {
+            orders = await OrderModel.find({
+                $or: [{ orderId: trimmedId }, { _id: trimmedId }]
+            })
             .populate('userId', 'name email mobile')
             .populate('delivery_address')
-            .populate('productId', 'name image price')
-            .populate('deliveryBoyId', 'name mobile');
+            .populate('productId', 'name image price unit')
+            .populate('deliveryBoyId', 'name mobile')
+            .sort({ createdAt: -1 });
+
+            // If matched by _id and this document has a shared orderId with other items
+            if (orders.length > 0 && orders[0].orderId && orders[0].orderId !== trimmedId) {
+                const groupOrderId = orders[0].orderId;
+                orders = await OrderModel.find({ orderId: groupOrderId })
+                    .populate('userId', 'name email mobile')
+                    .populate('delivery_address')
+                    .populate('productId', 'name image price unit')
+                    .populate('deliveryBoyId', 'name mobile')
+                    .sort({ createdAt: -1 });
+            }
+        } else {
+            // Case-insensitive regex match or exact match
+            orders = await OrderModel.find({
+                orderId: { $regex: new RegExp(`^${trimmedId}$`, 'i') }
+            })
+            .populate('userId', 'name email mobile')
+            .populate('delivery_address')
+            .populate('productId', 'name image price unit')
+            .populate('deliveryBoyId', 'name mobile')
+            .sort({ createdAt: -1 });
+        }
 
         if (!orders || orders.length === 0) {
             return res.status(404).json({
@@ -795,23 +851,73 @@ export const reorderController = async (req, res) => {
 export async function deleteOrderController(req, res) {
     try {
         const { id } = req.params;
-        const deletedOrder = await OrderModel.findByIdAndDelete(id);
-
-        if (!deletedOrder) {
-            return res.status(404).json({
-                message: "Order not found",
+        if (!id) {
+            return res.status(400).json({
+                message: "Order ID is required",
                 success: false,
                 error: true
             });
         }
 
-        res.status(200).json({
+        const trimmedId = id.trim();
+        let targetOrder = null;
+
+        // 1. Try finding by MongoDB ObjectId
+        if (mongoose.Types.ObjectId.isValid(trimmedId)) {
+            targetOrder = await OrderModel.findById(trimmedId);
+        }
+        // 2. Try finding by orderId (case-insensitive)
+        if (!targetOrder) {
+            targetOrder = await OrderModel.findOne({
+                orderId: { $regex: new RegExp(`^${trimmedId}$`, 'i') }
+            });
+        }
+
+        let deletedCount = 0;
+
+        if (targetOrder) {
+            // Delete all order items belonging to the same group or ID
+            if (targetOrder.orderId) {
+                const resDel = await OrderModel.deleteMany({
+                    $or: [
+                        { orderId: targetOrder.orderId },
+                        { orderId: { $regex: new RegExp(`^${targetOrder.orderId}$`, 'i') } },
+                        { _id: targetOrder._id }
+                    ]
+                });
+                deletedCount = resDel.deletedCount;
+            } else {
+                await OrderModel.findByIdAndDelete(targetOrder._id);
+                deletedCount = 1;
+            }
+        } else {
+            // Fallback: direct deleteMany by orderId or _id
+            const query = [
+                { orderId: trimmedId },
+                { orderId: { $regex: new RegExp(`^${trimmedId}$`, 'i') } }
+            ];
+            if (mongoose.Types.ObjectId.isValid(trimmedId)) {
+                query.push({ _id: trimmedId });
+            }
+            const resDel = await OrderModel.deleteMany({ $or: query });
+            deletedCount = resDel.deletedCount;
+        }
+
+        if (deletedCount === 0) {
+            return res.status(404).json({
+                message: "Order not found or already deleted",
+                success: false,
+                error: true
+            });
+        }
+
+        return res.status(200).json({
             message: "Order deleted successfully",
             success: true,
             error: false
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             message: error.message || "Delete failed",
             success: false,
             error: true
@@ -822,11 +928,55 @@ export async function deleteOrderController(req, res) {
 export async function assignOrderController(req, res) {
     try {
         const { orderId, deliveryBoyId } = req.body;
-        
-        const updatedOrders = await OrderModel.updateMany(
-            { orderId: orderId },
-            { deliveryBoyId: deliveryBoyId }
-        );
+        if (!orderId || !deliveryBoyId) {
+            return res.status(400).json({
+                message: "orderId and deliveryBoyId are required",
+                success: false
+            });
+        }
+
+        const trimmedId = orderId.trim();
+        let targetOrder = null;
+
+        if (mongoose.Types.ObjectId.isValid(trimmedId)) {
+            targetOrder = await OrderModel.findById(trimmedId);
+        }
+        if (!targetOrder) {
+            targetOrder = await OrderModel.findOne({
+                orderId: { $regex: new RegExp(`^${trimmedId}$`, 'i') }
+            });
+        }
+
+        let updatedOrders;
+        if (targetOrder && targetOrder.orderId) {
+            updatedOrders = await OrderModel.updateMany(
+                {
+                    $or: [
+                        { orderId: targetOrder.orderId },
+                        { orderId: { $regex: new RegExp(`^${targetOrder.orderId}$`, 'i') } },
+                        { _id: targetOrder._id }
+                    ]
+                },
+                { deliveryBoyId: deliveryBoyId }
+            );
+        } else if (targetOrder) {
+            updatedOrders = await OrderModel.updateMany(
+                { _id: targetOrder._id },
+                { deliveryBoyId: deliveryBoyId }
+            );
+        } else {
+            const query = [
+                { orderId: trimmedId },
+                { orderId: { $regex: new RegExp(`^${trimmedId}$`, 'i') } }
+            ];
+            if (mongoose.Types.ObjectId.isValid(trimmedId)) {
+                query.push({ _id: trimmedId });
+            }
+            updatedOrders = await OrderModel.updateMany(
+                { $or: query },
+                { deliveryBoyId: deliveryBoyId }
+            );
+        }
 
         if (updatedOrders.matchedCount === 0) {
             return res.status(404).json({
@@ -835,12 +985,12 @@ export async function assignOrderController(req, res) {
             });
         }
 
-        res.json({
+        return res.json({
             message: "Order assigned successfully",
             success: true
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             message: error.message || "Assignment failed",
             success: false
         });

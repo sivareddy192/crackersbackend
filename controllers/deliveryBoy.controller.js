@@ -163,7 +163,11 @@ export const updateOrderStatusByDeliveryBoy = async (req, res) => {
 
 export const getDeliveryBoys = async (req, res) => {
     try {
-        const deliveryBoys = await UserModel.find({ role: "DELIVERY_BOY" }).select("name email mobile _id");
+        // Only return Active delivery boys so admin can only assign to activated accounts
+        const deliveryBoys = await UserModel.find({ 
+            role: "DELIVERY_BOY", 
+            status: "Active" 
+        }).select("name email mobile _id status");
         return res.json({ data: deliveryBoys, success: true });
     } catch (error) {
         return res.status(500).json({ message: error.message, error: true });

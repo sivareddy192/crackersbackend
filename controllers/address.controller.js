@@ -4,7 +4,7 @@ import UserModel from "../models/user.model.js";
 export const addAddressController = async(request,response)=>{
     try {
         const userId = request.userId
-        const { address_line , city, state, pincode, country,mobile } = request.body
+        const { address_line , city, state, pincode, country, mobile, latitude, longitude } = request.body
 
         const createAddress = new AddressModel({
             address_line,
@@ -13,6 +13,8 @@ export const addAddressController = async(request,response)=>{
             country,
             pincode,
             mobile,
+            latitude: latitude || null,
+            longitude: longitude || null,
             userId : userId 
         })
         const saveAddress = await createAddress.save()
@@ -63,16 +65,20 @@ export const getAddressController = async(request,response)=>{
 export const updateAddressController = async(request,response)=>{
     try {
         const userId = request.userId
-        const { _id, address_line,city,state,country,pincode, mobile } = request.body 
+        const { _id, address_line, city, state, country, pincode, mobile, latitude, longitude } = request.body 
 
-        const updateAddress = await AddressModel.updateOne({ _id : _id, userId : userId },{
+        const updateFields = {
             address_line,
             city,
             state,
             country,
             mobile,
             pincode
-        })
+        };
+        if (latitude !== undefined) updateFields.latitude = latitude;
+        if (longitude !== undefined) updateFields.longitude = longitude;
+
+        const updateAddress = await AddressModel.updateOne({ _id : _id, userId : userId }, updateFields)
 
         return response.json({
             message : "Address Updated",
