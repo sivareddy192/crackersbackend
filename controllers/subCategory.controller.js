@@ -1,5 +1,6 @@
 import SubCategoryModel from "../models/subCategory.model.js";
-import { fastCache, invalidateSubCategories } from "../utils/fastCache.js";
+import ProductModel from "../models/product.model.js";
+import { fastCache, invalidateSubCategories, invalidateProducts } from "../utils/fastCache.js";
 
 export const UpdatedSubCategoryController = async (req, res) => {
   try {
@@ -41,9 +42,14 @@ export const getSubCategoryController = async (req, res) => {
         .sort({ createdAt: -1 })
         .lean();
 
+      const cleaned = data.map((sub) => ({
+        ...sub,
+        category: (sub.category || []).filter(Boolean),
+      }));
+
       return {
         message: "Subcategory list",
-        data,
+        data: cleaned,
         success: true,
         error: false
       };
@@ -104,12 +110,16 @@ export const deleteSubCategoryController = async (req, res) => {
       });
     }
 
+    // Unlink this subcategory from any products
+    await ProductModel.updateMany({ subCategory: _id }, { $pull: { subCategory: _id } });
+
     const deleted = await SubCategoryModel.findByIdAndDelete(_id);
     if (!deleted) {
       await SubCategoryModel.deleteOne({ _id });
     }
 
     invalidateSubCategories();
+    invalidateProducts();
 
     return res.json({
       message: "Subcategory deleted successfully",

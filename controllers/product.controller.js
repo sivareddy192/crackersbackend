@@ -603,6 +603,17 @@ export const getHomeFeedController = async (req, res) => {
                     .lean()
             ]);
 
+            const cleanedSubCategories = subCategories.map(s => ({
+                ...s,
+                category: (s.category || []).filter(Boolean)
+            }));
+
+            const cleanedProducts = featuredProducts.map(p => ({
+                ...p,
+                category: (Array.isArray(p.category) ? p.category : [p.category]).filter(Boolean),
+                subCategory: (Array.isArray(p.subCategory) ? p.subCategory : [p.subCategory]).filter(Boolean)
+            }));
+
             return {
                 message: "Home feed loaded",
                 error: false,
@@ -610,10 +621,10 @@ export const getHomeFeedController = async (req, res) => {
                 data: {
                     banners,
                     categories,
-                    subCategories,
+                    subCategories: cleanedSubCategories,
                     festivalOffers,
                     welcomeCoupon,
-                    featuredProducts
+                    featuredProducts: cleanedProducts
                 }
             };
         }, 300);

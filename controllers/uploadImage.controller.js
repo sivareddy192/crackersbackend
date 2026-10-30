@@ -5,6 +5,14 @@ export const uploadImageController = async(req,res)=>{
     try {
         const file = req.file
 
+        if (!file) {
+            return res.status(400).json({
+                message: "Please provide an image file to upload",
+                error: true,
+                success: false
+            })
+        }
+
         const uploadImage = await uploadImageCloudinary(file)
         
         return res.json({

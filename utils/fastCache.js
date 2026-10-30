@@ -56,8 +56,29 @@ class FastMemoryCache {
     this.store.clear();
   }
 
-  async sendCached(req, res, cacheKey, fetcher, ttlSeconds = 300) {
+  async sendCached(req, res, cacheKey, fetcher, ttlSeconds = 60) {
     const startHr = process.hrtime.bigint();
+
+    // Check if client requests fresh bypass (admin requests, ?t=..., or Cache-Control: no-cache)
+    const isBypass = req?.headers?.["cache-control"]?.includes("no-cache") || 
+                     req?.headers?.["pragma"]?.includes("no-cache") ||
+                     Boolean(req?.query?.t) ||
+                     Boolean(req?.body?.t);
+
+    if (isBypass) {
+      this.delete(cacheKey);
+      const data = await fetcher();
+      this.set(cacheKey, data, ttlSeconds);
+      const durationMs = Number(process.hrtime.bigint() - startHr) / 1e6;
+
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("X-Cache", "BYPASS");
+      res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
+      return res.status(200).send(JSON.stringify(data));
+    }
 
     const cached = this.get(cacheKey);
     if (cached) {
@@ -71,7 +92,7 @@ class FastMemoryCache {
 
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       res.setHeader("ETag", cached.etag);
-      res.setHeader("Cache-Control", `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`);
+      res.setHeader("Cache-Control", "no-cache, must-revalidate");
       res.setHeader("X-Cache", "HIT");
       res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
       return res.status(200).send(cached.jsonString);
@@ -84,7 +105,7 @@ class FastMemoryCache {
 
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("ETag", stored.etag);
-    res.setHeader("Cache-Control", `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`);
+    res.setHeader("Cache-Control", "no-cache, must-revalidate");
     res.setHeader("X-Cache", "MISS");
     res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
     return res.status(200).send(stored.jsonString);
@@ -105,11 +126,14 @@ export const invalidateBanners = () => {
 
 export const invalidateCategories = () => {
   fastCache.clearNamespace("category:");
+  fastCache.clearNamespace("subcategory:");
+  fastCache.clearNamespace("product:");
   fastCache.delete("home:feed");
 };
 
 export const invalidateSubCategories = () => {
   fastCache.clearNamespace("subcategory:");
+  fastCache.clearNamespace("product:");
   fastCache.delete("home:feed");
 };
 
