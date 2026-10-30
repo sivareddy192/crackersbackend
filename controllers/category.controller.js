@@ -1,7 +1,7 @@
 import CategoryModel from "../models/category.model.js";
 import SubCategoryModel from "../models/subCategory.model.js";
 import ProductModel from "../models/product.model.js";
-import { fastCache, invalidateCategories } from "../utils/fastCache.js";
+import { fastCache, invalidateCategories, invalidateSubCategories, invalidateProducts } from "../utils/fastCache.js";
 
 export const UploadCategoryController = async(req,res)=>{
     try {
@@ -104,7 +104,7 @@ export const updateCategoryController = async (req, res) => {
 
 export const deleteCategoryController = async (req, res) => {
   try {
-    const { _id } = req.body;
+    const _id = req.body?._id || req.query?._id || req.body?.id || req.query?.id || req.params?.id;
 
     if (!_id) {
       return res.status(400).json({
@@ -114,35 +114,36 @@ export const deleteCategoryController = async (req, res) => {
       });
     }
 
-    const subCount = await SubCategoryModel.countDocuments({
-      category: { $in: [_id] }
-    });
+    // Unlink this category from any subcategories and products so deletion is never blocked
+    await Promise.all([
+      SubCategoryModel.updateMany(
+        { category: _id },
+        { $pull: { category: _id } }
+      ),
+      ProductModel.updateMany(
+        { category: _id },
+        { $pull: { category: _id } }
+      )
+    ]);
 
-    const prodCount = await ProductModel.countDocuments({
-      category: { $in: [_id] }
-    });
-
-    if (subCount > 0 || prodCount > 0) {
-      return res.status(400).json({
-        message: "Category is used in subcategories or products",
-        error: true,
-        success: false
-      });
+    const deleted = await CategoryModel.findByIdAndDelete(_id);
+    if (!deleted) {
+      await CategoryModel.deleteOne({ _id });
     }
 
-    const deleted = await CategoryModel.deleteOne({ _id });
-
     invalidateCategories();
+    invalidateSubCategories();
+    invalidateProducts();
 
     return res.json({
-      message: "Category deleted",
+      message: "Category deleted successfully",
       data: deleted,
       error: false,
       success: true
     });
   } catch (error) {
     return res.status(500).json({
-      message: error.message,
+      message: error.message || "Failed to delete category",
       success: false,
       error: true
     });

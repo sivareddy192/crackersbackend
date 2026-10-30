@@ -71,10 +71,7 @@ class FastMemoryCache {
 
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       res.setHeader("ETag", cached.etag);
-      res.setHeader(
-        "Cache-Control",
-        `public, max-age=${Math.min(ttlSeconds, 120)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
-      );
+      res.setHeader("Cache-Control", `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`);
       res.setHeader("X-Cache", "HIT");
       res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
       return res.status(200).send(cached.jsonString);
@@ -87,10 +84,7 @@ class FastMemoryCache {
 
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("ETag", stored.etag);
-    res.setHeader(
-      "Cache-Control",
-      `public, max-age=${Math.min(ttlSeconds, 120)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`
-    );
+    res.setHeader("Cache-Control", `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}, stale-while-revalidate=86400`);
     res.setHeader("X-Cache", "MISS");
     res.setHeader("X-Response-Time", `${durationMs.toFixed(4)}ms`);
     return res.status(200).send(stored.jsonString);

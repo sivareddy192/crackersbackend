@@ -5,6 +5,7 @@ import { cancelOrderController, CashOnDeliveryOrderController, getOrderDetailsCo
 const orderRouter = express.Router()
 
 orderRouter.post("/cash-on-delivery", auth, CashOnDeliveryOrderController)
+orderRouter.post("/upi-order", auth, CashOnDeliveryOrderController)
 orderRouter.post('/checkout', auth, paymentController)
 orderRouter.post('/verify-payment', auth, verifyPaymentController)
 orderRouter.post('/webhook', express.raw({ type: 'application/json' }), webhookStripe)

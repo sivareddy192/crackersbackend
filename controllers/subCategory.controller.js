@@ -94,7 +94,7 @@ export const updateSubCategoryController = async (req, res) => {
 
 export const deleteSubCategoryController = async (req, res) => {
   try {
-    const { _id } = req.body;
+    const _id = req.body?._id || req.query?._id || req.body?.id || req.query?.id || req.params?.id;
 
     if (!_id) {
       return res.status(400).json({
@@ -105,11 +105,14 @@ export const deleteSubCategoryController = async (req, res) => {
     }
 
     const deleted = await SubCategoryModel.findByIdAndDelete(_id);
+    if (!deleted) {
+      await SubCategoryModel.deleteOne({ _id });
+    }
 
     invalidateSubCategories();
 
     return res.json({
-      message: "Subcategory deleted",
+      message: "Subcategory deleted successfully",
       data: deleted,
       success: true,
       error: false

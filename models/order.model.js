@@ -112,6 +112,14 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    payment_screenshot: {
+      type: String,
+      default: "",
+    },
+    customerQuery: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

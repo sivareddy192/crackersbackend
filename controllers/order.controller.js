@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import AddressModel from "../models/address.model.js";
 import sendEmail from "../config/sendEmail.js";
 import { orderReceiptTemplate } from "../utils/orderReceiptTemplate.js";
+import { adminOrderAlertTemplate } from "../utils/adminOrderAlertTemplate.js";
 
 const getSellingPrice = (product, unit) => {
     const variant = product?.variants?.find(option => option.unit === unit);
@@ -18,7 +19,26 @@ const getSellingPrice = (product, unit) => {
 export async function CashOnDeliveryOrderController(req, res) {
     try {
         const userId = req.userId
-        const { list_items, totalAmt, addressId, subTotalAmt, discountAmt, couponCode, deliveryCharge, handlingCharge } = req.body
+        const {
+            list_items,
+            totalAmt,
+            addressId,
+            subTotalAmt,
+            discountAmt,
+            couponCode,
+            deliveryCharge,
+            handlingCharge,
+            payment_screenshot,
+            paymentScreenshot,
+            payment_status,
+            paymentId,
+            customerQuery,
+            queryNote
+        } = req.body
+
+        const screenshotUrl = payment_screenshot || paymentScreenshot || ""
+        const resolvedCustomerQuery = (customerQuery || queryNote || "").trim()
+        const resolvedPaymentStatus = payment_status || (screenshotUrl ? "UPI (Verification Pending)" : (resolvedCustomerQuery ? "Query Submitted (Pending Call)" : "Pending Confirmation"))
 
         try {
             await OrderModel.collection.dropIndex("orderId_1")
@@ -70,8 +90,10 @@ export async function CashOnDeliveryOrderController(req, res) {
                     image: Array.isArray(product.image) ? product.image : [product.image],
                     quantity: el.quantity || 1
                 },
-                paymentId: "",
-                payment_status: "CASH ON DELIVERY",
+                paymentId: paymentId || (screenshotUrl ? "UPI-TRANSFER" : ""),
+                payment_status: resolvedPaymentStatus,
+                payment_screenshot: screenshotUrl,
+                customerQuery: resolvedCustomerQuery,
                 delivery_address: addressId,
                 subTotalAmt: individualItemPrice,
                 totalAmt: totalAmt,
@@ -184,11 +206,50 @@ export async function CashOnDeliveryOrderController(req, res) {
             );
         }
 
+        // Gather all Admin emails to notify them when order is placed
+        try {
+            const adminUsers = await UserModel.find({ role: 'ADMIN' }).select('email name').lean();
+            const adminEmailSet = new Set();
+            (adminUsers || []).forEach(a => {
+                if (a.email && a.email.trim()) adminEmailSet.add(a.email.trim().toLowerCase());
+            });
+
+            if (process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.trim()) {
+                adminEmailSet.add(process.env.ADMIN_EMAIL.trim().toLowerCase());
+            }
+
+            // Always ensure primary admin email is included
+            adminEmailSet.add("sivareddy03457@gmail.com");
+
+            for (const adminEmail of adminEmailSet) {
+                broadcastTasks.push(
+                    sendEmail({
+                        sendTo: adminEmail,
+                        subject: `🚨 New Order & Query #${commonOrderId} from ${userName} (₹${Number(totalAmt || 0).toLocaleString('en-IN')})`,
+                        html: adminOrderAlertTemplate({
+                            orderId: commonOrderId,
+                            customerName: userName,
+                            customerEmail: userEmail,
+                            customerMobile: addressDoc?.mobile || user?.mobile || "N/A",
+                            address: addressStr,
+                            items: emailItems,
+                            totalAmt: totalAmt,
+                            subTotalAmt: subTotalAmt,
+                            deliveryDate: deliveryDate,
+                            customerQuery: resolvedCustomerQuery
+                        })
+                    }).catch(err => console.error(`[Admin Email Fail] To ${adminEmail}:`, err.message))
+                );
+            }
+        } catch (adminEmailErr) {
+            console.error("[Admin Email Error]:", adminEmailErr.message);
+        }
+
         broadcastTasks.push(
             notifyAdmins({
-                title: "New Order Received",
-                message: `Order #${commonOrderId} has been placed.`,
-                details: `Amount: ₹${totalAmt}. Method: CASH ON DELIVERY.`,
+                title: "New Order & Query Received",
+                message: `Order #${commonOrderId} has been placed by ${userName}.`,
+                details: `Amount: ₹${totalAmt}. Customer Query: ${resolvedCustomerQuery || 'None'}. Please contact customer to update.`,
                 type: "info",
                 event: "NEW_ORDER"
             }).catch(err => console.error("[Broadcast Fail] Admin Notify:", err.message))
@@ -444,6 +505,39 @@ async function createOrderHelper(session, lineItems) {
                     })
                 });
                 console.log(`[Stripe Order Email] Dispatched to ${userEmail} successfully.`);
+            }
+
+            try {
+                const adminUsers = await UserModel.find({ role: 'ADMIN' }).select('email name').lean();
+                const adminEmailSet = new Set();
+                (adminUsers || []).forEach(a => {
+                    if (a.email && a.email.trim()) adminEmailSet.add(a.email.trim().toLowerCase());
+                });
+                if (process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.trim()) {
+                    adminEmailSet.add(process.env.ADMIN_EMAIL.trim().toLowerCase());
+                }
+                adminEmailSet.add("sivareddy03457@gmail.com");
+
+                for (const adminEmail of adminEmailSet) {
+                    await sendEmail({
+                        sendTo: adminEmail,
+                        subject: `🚨 New Stripe Order #${commonOrderId} from ${userName} (₹${Number(totalAmt || (session.amount_total / 100) || 0).toLocaleString('en-IN')})`,
+                        html: adminOrderAlertTemplate({
+                            orderId: commonOrderId,
+                            customerName: userName,
+                            customerEmail: userEmail,
+                            customerMobile: addressDoc?.mobile || user?.mobile || "N/A",
+                            address: addressStr,
+                            items: emailItems,
+                            totalAmt: totalAmt || (session.amount_total / 100),
+                            subTotalAmt: subTotalAmt,
+                            deliveryDate: deliveryDate,
+                            customerQuery: "Paid via Online Stripe Payment Gateway"
+                        })
+                    });
+                }
+            } catch (stripeAdminErr) {
+                console.error("[Stripe Admin Email Fail]:", stripeAdminErr.message);
             }
         } catch (emailErr) {
             console.error("[Stripe Order Email] Failed to send email receipt:", emailErr.message);
