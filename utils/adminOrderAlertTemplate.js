@@ -48,14 +48,14 @@ export const adminOrderAlertTemplate = ({
     `).join('');
 
     const cleanPhone = (customerMobile || '').replace(/[^0-9]/g, '');
-    const whatsappUrl = cleanPhone ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello%20${encodeURIComponent(customerName || 'Customer')},%20we%20received%20your%20order%20%23${orderId}%20on%20Trace%20Crackers.` : '';
+    const whatsappUrl = cleanPhone ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello%20${encodeURIComponent(customerName || 'Customer')},%20we%20received%20your%20order%20%23${orderId}%20on%20Tracly%20Crackers.` : '';
 
     return `
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
-        <title>New Order & Query Alert - Trace Crackers</title>
+        <title>New Order & Query Alert - Tracly Crackers</title>
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 30px 10px;">
         <table align="center" border="0" cellpadding="0" cellspacing="0" width="620" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
@@ -66,7 +66,7 @@ export const adminOrderAlertTemplate = ({
                     <span style="background-color: rgba(255, 255, 255, 0.15); color: #fed7aa; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 8px;">
                         🚨 New Order & Query Alert
                     </span>
-                    <h1 style="color: #ffffff; margin: 6px 0 0 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;">TRACE CRACKERS</h1>
+                    <h1 style="color: #ffffff; margin: 6px 0 0 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;">TRACLY CRACKERS</h1>
                     <p style="color: #cbd5e1; margin: 6px 0 0 0; font-size: 13px; font-weight: 500;">
                         Customer placed an order via Confirm Order. Please contact and update them.
                     </p>
@@ -193,7 +193,7 @@ export const adminOrderAlertTemplate = ({
             <tr>
                 <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
                     <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.5;">
-                        This is an automated notification from your <strong>Trace Crackers</strong> Store Admin System.
+                        This is an automated notification from your <strong>Tracly Crackers</strong> Store Admin System.
                     </p>
                     <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0 0;">
                         Admin Portal: <a href="${frontendUrl}/admin-portal/dashboard" style="color: #ea580c; text-decoration: none;">${frontendUrl}/admin-portal</a>

@@ -34,7 +34,7 @@ const productOfferEmailTemplate = ({
             <tr>
               <td style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 15px 30px; text-align: center; color: #ffffff;">
                 <div style="font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                  🔥 Fresh Arrival & Hot Discount!
+                  🔥 New Arrival & Hot Discount!
                 </div>
               </td>
             </tr>
@@ -127,8 +127,8 @@ const productOfferEmailTemplate = ({
                   Hurry, stock is limited and these introductory offers can end at any time! Reply to this email if you need assistance.
                 </p>
                 <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                  &copy; ${new Date().getFullYear()} Trace Grocery. All rights reserved.<br/>
-                  Fresh groceries, delivered instantly.
+                  &copy; ${new Date().getFullYear()} Tracly Crackers. All rights reserved.<br/>
+                  Crackers,Securely delivered.
                 </p>
               </td>
             </tr>

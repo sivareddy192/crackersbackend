@@ -38,7 +38,7 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
             
             <tr>
                 <td style="background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); padding: 40px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">TRACE</h1>
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">TRACLY CRACKERS</h1>
                     <p style="color: #cbd5e0; margin: 10px 0 0 0; font-size: 14px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Order Confirmed</p>
                 </td>
             </tr>
@@ -118,8 +118,8 @@ export const orderReceiptTemplate = ({ name, orderId, items, totalAmt, deliveryD
             
             <tr>
                 <td style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #edf2f7;">
-                    <p style="font-size: 12px; color: #a0aec0; margin: 0; line-height: 1.5;">If you have any questions, please contact our support team at sivareddy03457@gmail.com.</p>
-                    <p style="font-size: 12px; color: #a0aec0; margin: 10px 0 0 0; font-weight: bold;">© ${new Date().getFullYear()} TRACE. All rights reserved.</p>
+                    <p style="font-size: 12px; color: #a0aec0; margin: 0; line-height: 1.5;">If you have any questions, please contact our support team at munnareddy03457@gmail.com.</p>
+                    <p style="font-size: 12px; color: #a0aec0; margin: 10px 0 0 0; font-weight: bold;">© ${new Date().getFullYear()} TRACLY CRACKERS. All rights reserved.</p>
                 </td>
             </tr>
         </table>

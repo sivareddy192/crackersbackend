@@ -23,7 +23,7 @@ const forgotPasswordTemplate = ({ name, otp }) => {
             
             <tr>
               <td align="center" style="padding-bottom:20px;">
-                <h2 style="margin:0;font-size:26px;color:#ff8c00;font-weight:800;">TRACE</h2>
+                <h2 style="margin:0;font-size:26px;color:#ff8c00;font-weight:800;">TRACLY CRACKERS</h2>
               </td>
             </tr>
 
@@ -37,7 +37,7 @@ const forgotPasswordTemplate = ({ name, otp }) => {
             
             <tr>
               <td style="font-size:15px;color:#555;line-height:1.6;padding-bottom:20px;">
-                We received a request to reset your password for your <strong>Trace Grocery</strong> account.
+                We received a request to reset your password for your <strong>Tracly Crackers</strong> account.
                 Please use the OTP code below to continue with resetting your password.
               </td>
             </tr>
@@ -63,7 +63,7 @@ const forgotPasswordTemplate = ({ name, otp }) => {
             
             <tr>
               <td style="font-size:14px;color:#555;padding-top:15px;line-height:1.6;">
-                Enter this OTP on the Trace website to proceed with the password reset.
+                Enter this OTP on the Tracly Crackers website to proceed with the password reset.
                 If you did not request this, please ignore this email. Your account remains secure.
               </td>
             </tr>
@@ -71,7 +71,7 @@ const forgotPasswordTemplate = ({ name, otp }) => {
             
             <tr>
               <td style="padding-top:30px;font-size:12px;color:#888;text-align:center;">
-                © ${new Date().getFullYear()} Trace Grocery. All Rights Reserved.
+                © ${new Date().getFullYear()} Tracly Crackers. All Rights Reserved.
               </td>
             </tr>
 

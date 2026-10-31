@@ -127,7 +127,7 @@ const festivalOfferEmailTemplate = ({
                   *This exclusive festive deal is valid for a limited time only. Discounts can be updated or terminated without notice. Shop while supplies last!
                 </p>
                 <p style="margin: 0; font-size: 12px; color: #b45309; opacity: 0.7;">
-                  &copy; ${new Date().getFullYear()} Trace E-Commerce. Light up your festive season with style.<br/>
+                  &copy; ${new Date().getFullYear()} Tracly Crackers. Light up your festive season with style.<br/>
                   Fresh groceries, fast deliveries.
                 </p>
               </td>

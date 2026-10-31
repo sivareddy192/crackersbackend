@@ -24,7 +24,7 @@ const offerEmailTemplate = ({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Special Offer from Trace</title>
+    <title>Special Offer from Tracly Crackers</title>
   </head>
 
   <body style="margin:0;padding:0;background-color:#f3f4f6;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased;">
@@ -38,7 +38,7 @@ const offerEmailTemplate = ({
             
             <tr>
               <td style="background-color: #ff8c00; background: linear-gradient(135deg, #ff8c00 0%, #e056fd 100%); padding: 50px 30px; text-align: center; color: #ffffff;">
-                <h2 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; opacity: 0.95;">TRACE</h2>
+                <h2 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; opacity: 0.95;">TRACLY CRACKERS</h2>
                 <h1 style="margin: 20px 0 10px 0; font-size: 32px; font-weight: 800; line-height: 1.2;">${safeHeadline}</h1>
                 <p style="margin: 0; font-size: 18px; font-weight: 500; opacity: 0.9;">Get ready for something special!</p>
               </td>
@@ -108,7 +108,7 @@ const offerEmailTemplate = ({
                   Need any assistance? We are here to help you!
                 </p>
                 <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                  &copy; ${new Date().getFullYear()} Trace Grocery. All rights reserved.<br />
+                  &copy; ${new Date().getFullYear()} Tracly Crackers. All rights reserved.<br />
                   Tracly Store, Inc.
                 </p>
               </td>

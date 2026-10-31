@@ -15,7 +15,7 @@ const deliveryOtpTemplate = ({ name, otp, orderId }) => {
                         
                         <tr>
                             <td style="background-color:#16a34a;padding:30px;text-align:center;">
-                                <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;text-transform:uppercase;">Trace Delivery</h1>
+                                <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;text-transform:uppercase;">Tracly Delivery</h1>
                             </td>
                         </tr>
                         
@@ -37,7 +37,7 @@ const deliveryOtpTemplate = ({ name, otp, orderId }) => {
                         
                         <tr>
                             <td style="background-color:#f9fafb;padding:20px 30px;text-align:center;border-top:1px solid #f3f4f6;">
-                                <p style="color:#9ca3af;margin:0;font-size:12px;">© ${new Date().getFullYear()} Trace Grocery. All rights Reserved.</p>
+                                <p style="color:#9ca3af;margin:0;font-size:12px;">© ${new Date().getFullYear()} Tracly Crackers. All rights Reserved.</p>
                             </td>
                         </tr>
                     </table>

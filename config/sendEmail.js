@@ -16,7 +16,7 @@ const sendEmail = async({sendTo, subject, html })=>{
 
         const resend = new Resend(apiKey);
         const { data, error } = await resend.emails.send({
-            from: 'Trace <tracesupport@tracly.store>',
+            from: 'Tracly <traclysupport@tracly.in>',
             to: sendTo,
             subject: subject,
             html: html,

@@ -24,7 +24,7 @@ const verifyEmailTemplate = ({ name, url }) => {
             
             <tr>
               <td align="center" style="padding-bottom:20px;">
-                <h2 style="margin:0;font-size:26px;color:#ff8c00;font-weight:800;">TRACE</h2>
+                <h2 style="margin:0;font-size:26px;color:#ff8c00;font-weight:800;">TRACLY CRACKERS</h2>
               </td>
             </tr>
 
@@ -38,7 +38,7 @@ const verifyEmailTemplate = ({ name, url }) => {
             
             <tr>
               <td style="font-size:15px;color:#555;line-height:1.6;padding-bottom:20px;">
-                Thank you for creating an account on <strong>Trace Grocery</strong>.
+                Thank you for creating an account on <strong>Tracly Crackers</strong>.
                 To complete your registration and secure your account, please verify your email address by clicking the button below.
               </td>
             </tr>
@@ -67,7 +67,7 @@ const verifyEmailTemplate = ({ name, url }) => {
             
             <tr>
               <td style="padding-top:30px;font-size:12px;color:#888;text-align:center;">
-                © ${new Date().getFullYear()} Trace Grocery. All Rights Reserved.
+                © ${new Date().getFullYear()} Tracly Crackers. All Rights Reserved.
               </td>
             </tr>
 
